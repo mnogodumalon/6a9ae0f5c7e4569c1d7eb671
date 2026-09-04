@@ -1,0 +1,49 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. Laptop ThinkPad X1",
+    "serial_number": "z. B. SN-2024-00152",
+    "purchased_on": "Kaufdatum eingeben",
+    "warranty_until": "Garantie bis wann?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Teamleiter/in wählen",
+    "name": "z. B. Support-Team Ost",
+    "cost_center": "z. B. CC-2024-501"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Maria",
+    "last_name": "z. B. Schmidt",
+    "email": "z. B. m.schmidt@example.com",
+    "phone": "z. B. +49 30 1234567",
+    "active": "Aktiv/Inaktiv",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Welches Team?"
+  },
+  "TicketsDialog.tsx": {
+    "title": "z. B. VPN-Zugang funktioniert nicht",
+    "description": "Detaillierte Problembeschreibung eingeben",
+    "priority": "z. B. Hoch, Kritisch",
+    "status": "z. B. Neu, In Bearbeitung",
+    "category": "z. B. Hardware, Software",
+    "reporter_name": "z. B. Mustermann, Max",
+    "reporter_email": "z. B. m.mustermann@example.com",
+    "reporter_phone": "z. B. +49 30 1234567",
+    "due": "Fällig am wann?",
+    "opened_on": "Heute oder späteres Datum?",
+    "tags": "z. B. VIP, Sicherheit",
+    "affected_asset": "Welches Gerät betroffen?",
+    "vendor_link": "z. B. https://support.vendor.com/ticket",
+    "estimated_hours": "z. B. 5",
+    "billable": "Zur Abrechnung?",
+    "resolution": "Beschreibung der Lösung",
+    "sla_breached": "SLA verletzt?",
+    "customer_satisfaction": "Bewertung 1–5",
+    "internal_note": "Team-Notizen, nicht sichtbar außen"
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket?",
+    "text": "Notiz-Text eingeben",
+    "author": "z. B. Vorname Nachname",
+    "visible_to_reporter": "Extern sichtbar?"
+  }
+}

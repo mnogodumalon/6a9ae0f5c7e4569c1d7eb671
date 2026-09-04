@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "slug": "support-anfrage",
+      "type": "custom",
+      "entity": "tickets",
+      "title": "Support-Anfrage einreichen",
+      "published": false,
+      "fields": [
+        "title",
+        "description",
+        "reporter_name",
+        "reporter_email",
+        "reporter_phone"
+      ]
+    }
+  ]
+}

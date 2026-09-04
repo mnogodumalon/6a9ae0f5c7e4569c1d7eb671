@@ -1,0 +1,41 @@
+{
+  "pages": {
+    "en": {
+      "Aktive Agenten": "Active Agents",
+      "Alle Tickets sind geschlossen — gute Arbeit!": "All tickets are closed — great work!",
+      "Als gelöst markieren": "Mark as Resolved",
+      "Annehmen": "Accept",
+      "Fällig": "Due",
+      "Fällig & überfällig": "Due & Overdue",
+      "In Bearbeitung setzen": "Set In Progress",
+      "Jetzt annehmen": "Accept Now",
+      "Kein Ticket überfällig — alles im Zeitplan.": "No tickets overdue — everything on schedule.",
+      "Keine Tickets warten auf Kunden-Rückmeldung.": "No tickets awaiting customer response.",
+      "Lösen": "Resolve",
+      "Neu": "New",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Offen": "Open",
+      "Ohne Titel": "Untitled",
+      "SLA verletzt": "SLA Breached",
+      "Schließen": "Close",
+      "Tickets nach Kategorie": "Tickets by Category",
+      "Tickets nach Priorität": "Tickets by Priority",
+      "Wartet auf Kunde": "Waiting for Customer",
+      "Wartet auf Kunden": "Waiting for Customer",
+      "haben überfällige Tickets": "have overdue tickets",
+      "hat ein überfälliges Ticket": "has an overdue ticket",
+      "neue Tickets": "new tickets",
+      "neues Ticket": "new ticket",
+      "offene Tickets": "open tickets",
+      "offenes Ticket": "open ticket",
+      "{0} {1} im System.": "{0} {1} in the system.",
+      "{0} {1} warten auf Zuweisung.": "{0} {1} awaiting assignment.",
+      "{0} {1} — sofort prüfen.": "{0} {1} — review immediately.",
+      "Überfällig": "Overdue",
+      "überfällig": "overdue",
+      "überfällig seit": "overdue since"
+    }
+  },
+  "v": 1
+}

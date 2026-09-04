@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on", "warranty_until"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten ohne berechenbare Größen. Nur Datum-Defaults für typische Erfassung + Garantiefrist."
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Stamm-Entity mit Teamname + Teamleitung (applookup). Keine Arithmetik ohne Multilookup der Mitglieder."
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 7,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Personenstamm mit Arbeitszeiten. Keine berechenbaren Größen; Stunden ist absolute Angabe, keine Multiplika­tor-Beziehung zu anderen Feldern."
+    },
+    "Tickets": {
+      "placeholders_set": 18,
+      "defaults_keys": ["opened_on", "due", "priority", "status"],
+      "computed_keys": [],
+      "reason": "Aufgaben-Management-Entity ohne Preis-/Kosten-Semantik in applookups. Estimated_hours ist Schätzung, kein Multiplikator für Gesamtkosten. Datumspaar (opened_on, due) hat kein Lead-Time-Feld im Schema. Computed bleibt leer, keine zwingenden Formeln erkannt."
+    },
+    "Notizen": {
+      "placeholders_set": 4,
+      "defaults_keys": ["visible_to_reporter"],
+      "computed_keys": [],
+      "reason": "Notiz-Anhänge zu Tickets. Reine Text-Erfassung mit Sichtbarkeits-Flag. Keine Arithmetik oder Berechnungen sinnvoll."
+    }
+  }
+}
