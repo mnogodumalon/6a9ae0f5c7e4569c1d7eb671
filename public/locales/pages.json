@@ -1,0 +1,38 @@
+{
+  "pages": {
+    "en": {
+      "1 Ticket wartet auf Zuweisung": "1 ticket waiting for assignment",
+      "Agents aktiv": "Agents active",
+      "Alle Tickets abgeschlossen — gute Arbeit!": "All tickets resolved — great work!",
+      "Alle Tickets sind zugewiesen — super!": "All tickets are assigned — great!",
+      "Als gelöst markieren": "Mark as Resolved",
+      "Fällig": "Due",
+      "Gelöst": "Resolved",
+      "In Bearbeitung": "In Progress",
+      "Jetzt bearbeiten": "Work on it now",
+      "Keine Priorität": "No Priority",
+      "Keine kritischen Tickets in Bearbeitung": "No critical tickets in progress",
+      "Kritisch": "Critical",
+      "Kritisch & in Bearbeitung": "Critical & In Progress",
+      "Neu & nicht zugewiesen": "New & Unassigned",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Offen": "Open",
+      "Ohne Titel": "Untitled",
+      "Ohne Zuweisung": "Unassigned",
+      "Schließen": "Close",
+      "Ticket überfällig": "Ticket overdue",
+      "Tickets überfällig": "Tickets overdue",
+      "neue Tickets warten": "new tickets waiting",
+      "neues Ticket wartet": "new ticket waiting",
+      "offene Tickets": "open tickets",
+      "offenes Ticket": "open ticket",
+      "{0} Tickets warten auf Zuweisung": "{0} tickets waiting for assignment",
+      "Überfällig": "Overdue",
+      "Übernehmen": "Apply",
+      "— Ticket überfällig seit": "— Ticket overdue since",
+      "— Tickets überfällig, ältestes seit": "— Tickets overdue, oldest since"
+    }
+  },
+  "v": 1
+}

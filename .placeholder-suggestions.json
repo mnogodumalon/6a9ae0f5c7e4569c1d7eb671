@@ -1,0 +1,47 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. Laptop Dell XPS 15",
+    "serial_number": "z. B. 4F9X7G2H",
+    "purchased_on": "Wann angeschafft?",
+    "warranty_until": "Bis wann gültig?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Teamleitung wählen",
+    "name": "z. B. Infrastruktur",
+    "cost_center": "z. B. CC-1200"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Anna",
+    "last_name": "z. B. Schmidt",
+    "email": "anna.schmidt@example.com",
+    "phone": "z. B. +49-30-1234567",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Team wählen"
+  },
+  "TicketsDialog.tsx": {
+    "assigned_agent": "Mitarbeitende/r zuweisen",
+    "team": "Team zuweisen",
+    "parent_ticket": "Übergeordnetes Ticket wählen",
+    "title": "z. B. Drucker im 2. OG offline",
+    "description": "Problem-Details, Schritte zum Reproduzieren...",
+    "priority": "z. B. Hoch, Kritisch",
+    "status": "Status wählen",
+    "category": "z. B. Hardware, Software",
+    "reporter_name": "z. B. Max Müller",
+    "reporter_email": "max.mueller@example.com",
+    "reporter_phone": "z. B. +49-30-1234567",
+    "due": "Fällig wann?",
+    "opened_on": "Wann eröffnet?",
+    "tags": "z. B. VIP, Sicherheit",
+    "affected_asset": "Betroffenes Asset wählen",
+    "vendor_link": "z. B. https://support.dell.com/...",
+    "estimated_hours": "z. B. 2,5",
+    "resolution": "Gelöste Schritte, Ergebnis...",
+    "internal_note": "Interne Anmerkungen, Erfahrungen..."
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket?",
+    "text": "Notiz-Text, Beobachtungen, Updates...",
+    "author": "z. B. Anna Schmidt"
+  }
+}

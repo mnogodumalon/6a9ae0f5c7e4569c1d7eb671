@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten-Entity — keine number-Felder mit berechenbarer Beziehung, keine Preisketten, keine Applookup-Ziele mit numerischen Feldern"
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten-Entity — nur Name, Teamleitung (Applookup) und Kostenstelle; nichts berechenbar"
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 7,
+      "defaults_keys": ["active", "working_hours_per_week"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten-Entity — Arbeitsstunden ein Schätzwert pro Mitarbeiter, nicht berechenbar aus anderen Feldern"
+    },
+    "Tickets": {
+      "placeholders_set": 20,
+      "defaults_keys": ["opened_on", "due", "status", "priority", "estimated_hours"],
+      "computed_keys": [],
+      "reason": "Keine Preis-Ketten oder -Produkte im Form — estimated_hours ist Schätzung, keine Aggregation mehrerer Komponenten; keine MWST, keine Netto-Brutto-Trennung"
+    },
+    "Notizen": {
+      "placeholders_set": 3,
+      "defaults_keys": ["visible_to_reporter"],
+      "computed_keys": [],
+      "reason": "Reine Referenz-Entity zu Tickets — Text und Verfasser sind Benutzereingaben, keine Berechnung"
+    }
+  }
+}
