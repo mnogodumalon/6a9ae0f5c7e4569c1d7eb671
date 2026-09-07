@@ -1,0 +1,51 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. MacBook Air 2024",
+    "serial_number": "z. B. A2E9F4K2X",
+    "purchased_on": "Kaufdatum wählen",
+    "warranty_until": "Garantie endet wann?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Teamleiter/in wählen",
+    "name": "z. B. Support Team, Development",
+    "cost_center": "z. B. IT-001"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Hans",
+    "last_name": "z. B. Müller",
+    "email": "vorname.nachname@beispiel.de",
+    "phone": "z. B. +49 123 456789",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Welches Team?"
+  },
+  "TicketsDialog.tsx": {
+    "title": "z. B. Drucker funktioniert nicht",
+    "reporter_name": "Name des Anrufers",
+    "reporter_email": "E-Mail-Adresse",
+    "reporter_phone": "z. B. +49 123 456789",
+    "category": "z. B. Hardware, Software",
+    "priority": "Dringlichkeit wählen",
+    "status": "z. B. Neu, In Bearbeitung",
+    "assigned_agent": "Mitarbeitende/r zuweisen",
+    "team": "Team zuweisen",
+    "parent_ticket": "Übergeordnet? Optional",
+    "description": "Was ist das Problem? Schritte zum Reproduzieren, Fehlermeldungen...",
+    "affected_asset": "Betroffenes Gerät wählen",
+    "vendor_link": "z. B. https://support.vendor.com/ticket/123",
+    "due": "Fälligkeitsdatum wählen",
+    "opened_on": "Eröffnet wann?",
+    "estimated_hours": "z. B. 2 Stunden",
+    "billable": "Ist abrechenbar?",
+    "tags": "z. B. VIP, Security, Recurring",
+    "customer_satisfaction": "Bewertung 1–5",
+    "resolution": "Lösung beschreiben",
+    "sla_breached": "War SLA überschritten?",
+    "internal_note": "Interne Hinweise, Log-Auszüge, Notizen..."
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket?",
+    "visible_to_reporter": "Zeigen zum Anforderer?",
+    "author": "z. B. Hans Müller",
+    "text": "Notiztext, Beobachtungen, nächste Schritte..."
+  }
+}

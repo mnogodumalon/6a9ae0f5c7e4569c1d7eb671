@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on"],
+      "computed_keys": [],
+      "reason": "Reine IT-Stammdaten (Name, Seriennummer, Kaufdatum, Garantie) — keine Berechnungen möglich (kein Preis, keine Mengen, keine numerischen Lookups)"
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Team-Verwaltung mit Teamleitung (applookup auf Mitarbeitende) — kein Preis-Feld im Target, keine Aggregationen"
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 6,
+      "defaults_keys": ["active"],
+      "computed_keys": [],
+      "reason": "Personenstammdaten — Arbeitsstunden ist Referenz, keine berechnbare Größe; bool-Feld 'active' mit Default true (Aktivitäts-Semantik)"
+    },
+    "Tickets": {
+      "placeholders_set": 21,
+      "defaults_keys": ["status", "priority", "opened_on", "due", "estimated_hours", "billable"],
+      "computed_keys": [],
+      "reason": "Ticket-Management mit Status-Pipeline und Zeittracking — 'opened_on' und 'due' bilden kein Datumspaar für Dauer-Berechnung (Eröffnung vs. Fälligkeit); 'estimated_hours' ist Schätzfeld ohne applookup-Multiplikation (kein Stundensatz im Form); keine Money-Felder, daher keine Aggregationen"
+    },
+    "Notizen": {
+      "placeholders_set": 4,
+      "defaults_keys": ["visible_to_reporter"],
+      "computed_keys": [],
+      "reason": "Notiz-Sammlung für Tickets — reine Relationsdaten (applookup auf Tickets, bool-Flag für Sichtbarkeit, Freitext); keine Berechnungen"
+    }
+  }
+}

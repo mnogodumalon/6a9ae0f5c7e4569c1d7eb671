@@ -1,0 +1,30 @@
+{
+  "pages": {
+    "en": {
+      "1 Ticket überfällig oder SLA verletzt": "1 Ticket Overdue or SLA Breached",
+      "Aktive Agenten": "Active Agents",
+      "Alle Tickets im Plan — {0} offen": "All Tickets on Track — {0} Open",
+      "Alle Tickets sind zugewiesen — super!": "All Tickets Are Assigned — Great!",
+      "Als gelöst markieren": "Mark as Resolved",
+      "Antwort erhalten": "Reply Received",
+      "Bearbeitung starten": "Start Processing",
+      "Fällig": "Due",
+      "In Bearbeitung": "In Progress",
+      "Kein Titel": "No Title",
+      "Neu": "New",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Offen": "Open",
+      "Schließen": "Close",
+      "Ticket erfassen": "Log Ticket",
+      "Ticket öffnen": "Open Ticket",
+      "Tickets nach Kategorie": "Tickets by Category",
+      "Zuweisen": "Assign",
+      "{0} Tickets überfällig oder SLA verletzt": "{0} Tickets Overdue or SLA Breached",
+      "{0} neue Tickets warten auf Zuweisung": "{0} New Tickets Awaiting Assignment",
+      "{0} — {1} Tickets überfällig": "{0} — {1} Tickets Overdue",
+      "Überfällig": "Overdue"
+    }
+  },
+  "v": 1
+}
