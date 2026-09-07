@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten für IT-Geräte (Name, Seriennummer, Kaufdatum, Garantieende). Keine berechenbaren Felder, keine Produkte, keine Datums-Paare die Zeiträume bilden."
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten für Teamorganisation (Name, Teamleitung, Kostenstelle). Der applookup auf Mitarbeitende ist ein Kontext-Link, nicht Material für Formeln (Arbeitsstunden sind Einzelner-Kennzahl, nicht aggregierbar)."
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 7,
+      "defaults_keys": ["active", "working_hours_per_week"],
+      "computed_keys": [],
+      "reason": "Reine Personenstammdaten. Arbeitsstunden pro Woche ist eine feste Vereinbarung, nicht berechenbar. Keine Datums-Paare, keine Mengen/Preise."
+    },
+    "Tickets": {
+      "placeholders_set": 20,
+      "defaults_keys": ["opened_on", "due", "priority", "status", "estimated_hours", "billable"],
+      "computed_keys": [],
+      "reason": "Reine Helpdesk-Verwaltung. Geschätzte Stunden sind Schätzungen (keine Stundensatz-Multiplikation möglich, da kein Satz im Form vorhanden). Keine berechenbaren Aggregationen oder Zwischensummen."
+    },
+    "Notizen": {
+      "placeholders_set": 4,
+      "defaults_keys": ["visible_to_reporter"],
+      "computed_keys": [],
+      "reason": "Reine Ticket-Kommentare (Text, Verfasser, Sichtbarkeit). Keine Number-Felder, keine Berechnung."
+    }
+  }
+}

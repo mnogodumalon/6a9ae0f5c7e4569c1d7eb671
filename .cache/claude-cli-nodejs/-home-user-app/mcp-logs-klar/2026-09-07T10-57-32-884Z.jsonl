@@ -1,0 +1,9 @@
+{"debug":"Calling MCP tool: build_public_pages","timestamp":"2026-09-07T10:58:13.037Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_public_pages' completed successfully in 11ms","timestamp":"2026-09-07T10:58:13.048Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Calling MCP tool: build_intent_pages","timestamp":"2026-09-07T10:58:43.862Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_intent_pages' still running (30s elapsed)","timestamp":"2026-09-07T10:59:13.862Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_intent_pages' still running (60s elapsed)","timestamp":"2026-09-07T10:59:43.863Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_intent_pages' still running (90s elapsed)","timestamp":"2026-09-07T11:00:13.863Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_intent_pages' still running (120s elapsed)","timestamp":"2026-09-07T11:00:43.864Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_intent_pages' still running (150s elapsed)","timestamp":"2026-09-07T11:01:13.865Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}
+{"debug":"Tool 'build_intent_pages' completed successfully in 2m 40s","timestamp":"2026-09-07T11:01:24.615Z","sessionId":"63efadaa-c36b-4a99-897d-afa03f56fc67","cwd":"/home/user/app"}

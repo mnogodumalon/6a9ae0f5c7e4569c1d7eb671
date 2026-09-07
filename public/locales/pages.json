@@ -1,0 +1,31 @@
+{
+  "pages": {
+    "en": {
+      "Alle Tickets erledigt — super!": "All tickets resolved — great job!",
+      "Als gelöst markieren": "Mark as Resolved",
+      "Annehmen": "Accept",
+      "Filter aufheben": "Clear Filter",
+      "Gefiltert nach Kategorie": "Filtered by Category",
+      "Heute fällig": "Due Today",
+      "In Bearbeitung setzen": "Set In Progress",
+      "Keine kritischen oder überfälligen Tickets — alles im Griff!": "No critical or overdue tickets — everything under control!",
+      "Kritisch": "Critical",
+      "Kritisch & überfällig": "Critical & Overdue",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Offen": "Open",
+      "Offene Tickets nach Kategorie": "Open Tickets by Category",
+      "Ohne Titel": "Untitled",
+      "Schließen": "Close",
+      "Weiter": "Next",
+      "{0} Tickets heute fällig.": "{0} tickets due today.",
+      "{0} offene Tickets in Bearbeitung.": "{0} open tickets in progress.",
+      "{0} überfällige Tickets, darunter {1}.": "{0} overdue tickets, including {1}.",
+      "Überfällig": "Overdue",
+      "Überfällig: {0} — sofort handeln.": "Overdue: {0} — take immediate action.",
+      "— kritisches Ticket ist überfällig.": "— critical ticket is overdue.",
+      "— {0} kritische Tickets sind überfällig.": "— {0} critical tickets are overdue."
+    }
+  },
+  "v": 1
+}
