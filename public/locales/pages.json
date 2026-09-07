@@ -1,0 +1,29 @@
+{
+  "pages": {
+    "en": {
+      "Alle Tickets erledigt — großartige Arbeit!": "All tickets resolved — great work!",
+      "Alle offenen Tickets haben einen Bearbeiter.": "All open tickets have an assignee.",
+      "In Bearbeitung": "In Progress",
+      "Keine überfälligen Tickets — alles im Zeitplan.": "No overdue tickets — everything on schedule.",
+      "Neu": "New",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Ohne Titel": "Untitled",
+      "Wartet auf Kunde": "Waiting for Customer",
+      "Weiter": "Next",
+      "Zuweisen": "Assign",
+      "neue Tickets": "new tickets",
+      "neues Ticket": "new ticket",
+      "{0} offene {1} in Bearbeitung.": "{0} open {1} in progress.",
+      "{0} {1} warten auf Zuweisung.": "{0} {1} waiting for assignment.",
+      "{0} — {1} — sofort handeln.": "{0} — {1} — action required immediately.",
+      "Überfällig": "Overdue",
+      "Überfällige Tickets": "Overdue Tickets",
+      "überfällige Tickets": "overdue tickets",
+      "überfälliges Ticket": "overdue ticket",
+      "— {0} überfällige Tickets, sofort bearbeiten.": "— {0} overdue tickets, handle immediately.",
+      "— überfälliges Ticket, sofort bearbeiten.": "— overdue ticket, handle immediately."
+    }
+  },
+  "v": 1
+}

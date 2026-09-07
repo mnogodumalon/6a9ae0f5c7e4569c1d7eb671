@@ -1,0 +1,52 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. MacBook Pro 16",
+    "serial_number": "z. B. C01234567",
+    "purchased_on": "Wann wurde das Asset gekauft?",
+    "warranty_until": "Wann endet die Garantie?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Teamleitung wählen",
+    "name": "z. B. Support-Team",
+    "cost_center": "z. B. CC-500"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Anna",
+    "last_name": "z. B. Müller",
+    "email": "z. B. anna.mueller@beispiel.de",
+    "phone": "z. B. +49 30 123456",
+    "active": "Ist die Person aktiv?",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Welchem Team gehört die Person an?"
+  },
+  "TicketsDialog.tsx": {
+    "assigned_agent": "Wem zuweisen?",
+    "team": "Welches Team kümmert sich?",
+    "parent_ticket": "Übergeordnetes Ticket wählen",
+    "title": "z. B. E-Mail funktioniert nicht",
+    "description": "Problem, Fehlertext, Schritte zum Reproduzieren...",
+    "priority": "Wähle eine Priorität",
+    "status": "Wähle einen Status",
+    "category": "z. B. Hardware, Software",
+    "reporter_name": "z. B. Max Schmidt",
+    "reporter_email": "z. B. max@firma.de",
+    "reporter_phone": "z. B. +49 30 98765",
+    "due": "Bis wann sollte es gelöst sein?",
+    "opened_on": "Wann wurde gemeldet?",
+    "tags": "z. B. VIP, Sicherheit",
+    "affected_asset": "Welches Asset betroffen?",
+    "vendor_link": "z. B. https://support.vendor.com/ticket/123",
+    "estimated_hours": "z. B. 4",
+    "billable": "Soll abgerechnet werden?",
+    "resolution": "Wie wurde das Problem gelöst?",
+    "sla_breached": "Wurde die SLA verletzt?",
+    "customer_satisfaction": "Wähle eine Bewertung",
+    "internal_note": "Für Kolleg/innen: Kontext, Lösungsansätze..."
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket?",
+    "text": "Notiz, Update, Zwischenstand...",
+    "author": "z. B. Anna Müller",
+    "visible_to_reporter": "Soll die meldende Person das sehen?"
+  }
+}

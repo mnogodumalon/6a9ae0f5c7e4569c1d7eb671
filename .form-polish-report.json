@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on", "warranty_until"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten ohne numerische Beziehungen — zwei Datumsfelder mit klarer Semantik (Kauf, Garantie-Ende) bekommen today-basierte Defaults."
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Verwaltungsdaten mit applookup auf Mitarbeitende — die Arbeitsstunden der Teamleitung sind kein Team-Aggregat. Keine berechenbaren Beziehungen."
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 7,
+      "defaults_keys": ["active"],
+      "computed_keys": [],
+      "reason": "Stammdaten einer Person mit bool-Feld 'active' → true-Default (neu erfasste Mitarbeiter sind aktiv). Keine Zähl- oder Preisfelder, keine Computeds."
+    },
+    "Tickets": {
+      "placeholders_set": 21,
+      "defaults_keys": ["opened_on", "due", "status", "priority", "estimated_hours", "billable"],
+      "computed_keys": [],
+      "reason": "Ticket-Management mit Status/Prioritäts-Lookups, Datums-Paaren (erfasst→fällig) und Stunden-Schätzung. Kein Stundensatz im Applookup-Target → keine Kostenberechnung (estimated_hours × Satz). Billable ist business-decision, kein computed. Große Form mit durchdachter fieldOrder: Titel + Reporter-Daten oben, Kategorien/Status-Lookups, Zuordnung (Agent/Team), Datums-Pair, Tracking (Assets/Vendor), Kosten-Dimension (Stunden/Abrechnungsflag), dann Freitexte am Ende."
+    },
+    "Notizen": {
+      "placeholders_set": 4,
+      "defaults_keys": ["visible_to_reporter"],
+      "computed_keys": [],
+      "reason": "Notiz-Entity an Tickets. Bool-Feld 'visible_to_reporter' → true-Default (Notizen sind standardmäßig für Reporters sichtbar). Keine Berechnung nötig."
+    }
+  }
+}
