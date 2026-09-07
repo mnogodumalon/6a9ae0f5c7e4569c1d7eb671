@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten. Asset-Verwaltung ohne Preise oder berechnete Felder. Zwei unabhängige Datumfelder (Kauf + Garantie) bilden keine zusammenhängende Dauer."
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Reine Organisationsstruktur. Applookup auf Mitarbeitende hat Zielfeld (Arbeitsstunden), aber nicht sinnvoll berechenbar — Arbeitsstunden eines Leads gehören zum Mitarbeiter, nicht zum Team selbst."
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 7,
+      "defaults_keys": ["active"],
+      "computed_keys": [],
+      "reason": "HR-Stammdaten. Working_hours_per_week ist reine Eingabe, kein Multiplikator oder Paar vorhanden. Applookup auf Teams hat keine Preis-Zielfelder."
+    },
+    "Tickets": {
+      "placeholders_set": 19,
+      "defaults_keys": ["status", "priority", "opened_on", "due", "billable"],
+      "computed_keys": [],
+      "reason": "Ticketing-Entity ohne Berechnungen. Estimated_hours ist reine Eingabe (kein Stundensatz × Stunden). Opened_on ist Systemfeld (keine Bearbeitungsdauer). Keine Datumspaar mit Bearbeitungslogik (anreise/abreise, von/bis). Keine applookup mit Preis-Zielfeldern."
+    },
+    "Notizen": {
+      "placeholders_set": 4,
+      "defaults_keys": ["visible_to_reporter"],
+      "computed_keys": [],
+      "reason": "Reine Kommentar-Entity. Keine Berechnungen, keine Preise. Applookup auf Ticket hat estimated_hours als Zielfeld, aber Notiz ≠ Ticket-Aufwand — nicht berechenbar."
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "pages": {
+    "en": {
+      " · noch nicht zugewiesen": " · not yet assigned",
+      " · zuständig: {0}": " · assigned to: {0}",
+      "Agenten aktiv": "Active Agents",
+      "Alle Tickets im grünen Bereich": "All tickets in the green",
+      "Alle offenen Tickets sind zugewiesen": "All open tickets are assigned",
+      "Gelöst markieren": "Mark as Resolved",
+      "Geschlossene Tickets können nicht mehr verschoben werden.": "Closed tickets can no longer be moved.",
+      "Heute gelöst": "Resolved Today",
+      "In Bearbeitung setzen": "Set to In Progress",
+      "Kein Titel": "No Title",
+      "Keine überfälligen Tickets — alles im Zeitplan": "No overdue tickets — everything on schedule",
+      "Lösen": "Resolve",
+      "Lösung bestätigen": "Confirm Solution",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Offen": "Open",
+      "Schließen": "Close",
+      "Sofort bearbeiten": "Handle Immediately",
+      "Status auf „{0}\" gesetzt": "Status set to \"{0}\"",
+      "Ticket auf „{0}\" gesetzt": "Ticket set to \"{0}\"",
+      "Zuweisen": "Assign",
+      "kritisches Ticket überfällig seit": "critical ticket overdue since",
+      "{0} Ticket{1} heute gelöst — alles läuft gut": "{0} ticket{1} resolved today — everything is running smoothly",
+      "{0} {1} auf Bearbeitung": "{0} {1} in progress",
+      "{0} überfällig · {1} neue Anfrage{2}": "{0} overdue · {1} new request{2}",
+      "Überfällig": "Overdue",
+      "Überfällig & Kritisch": "Overdue & Critical"
+    }
+  },
+  "v": 1
+}

@@ -1,0 +1,50 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. Laptop-001",
+    "serial_number": "z. B. SN123456789",
+    "purchased_on": "Wann wurde es gekauft?",
+    "warranty_until": "Wann endet die Garantie?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Teamleiter/in wählen",
+    "name": "z. B. Backend-Team",
+    "cost_center": "z. B. IT-001"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Max",
+    "last_name": "z. B. Müller",
+    "email": "max.mueller@example.com",
+    "phone": "z. B. +49 30 123456",
+    "active": "Ist die Person aktiv?",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Welches Team?"
+  },
+  "TicketsDialog.tsx": {
+    "assigned_agent": "Zuständige/r Mitarbeitende/r",
+    "team": "Welches Team bearbeitet?",
+    "parent_ticket": "Übergeordnetes Ticket",
+    "title": "z. B. Drucker reagiert nicht",
+    "description": "Ausführliche Problembeschreibung",
+    "category": "z. B. Hardware, Software",
+    "reporter_name": "z. B. Anna Schmidt",
+    "reporter_email": "anna.schmidt@company.de",
+    "reporter_phone": "z. B. +49 30 555555",
+    "due": "Bis wann muss es gelöst sein?",
+    "opened_on": "Wann wurde eröffnet?",
+    "tags": "z. B. VIP, Wiederkehrend",
+    "affected_asset": "Welches Asset betroffen?",
+    "vendor_link": "z. B. https://support.vendor.com",
+    "estimated_hours": "z. B. 2",
+    "billable": "Wird abgerechnet?",
+    "resolution": "Wie wurde das Problem gelöst?",
+    "sla_breached": "Wurde die SLA verletzt?",
+    "customer_satisfaction": "Zufriedenheit 1-5",
+    "internal_note": "Interne Notizen für Team"
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket?",
+    "text": "Notiz hinzufügen...",
+    "author": "z. B. Anna Schmidt",
+    "visible_to_reporter": "Sichtbar für Meldende?"
+  }
+}
