@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "slug": "support-anfrage",
+      "component": "SupportAnfrage",
+      "title": "Support-Anfrage einreichen",
+      "endpoints": [
+        {
+          "entity": "tickets",
+          "op": "create",
+          "fields": [
+            "reporter_name",
+            "reporter_email",
+            "reporter_phone",
+            "title",
+            "description",
+            "category"
+          ],
+          "preset_fields": {
+            "status": "new",
+            "priority": "medium"
+          }
+        }
+      ]
+    }
+  ]
+}
