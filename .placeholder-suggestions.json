@@ -1,0 +1,52 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. Laptop Dell XPS",
+    "serial_number": "z. B. DEL-2024-789456",
+    "purchased_on": "Wann wurde es gekauft?",
+    "warranty_until": "Bis wann gilt die Garantie?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Wer leitet das Team?",
+    "name": "z. B. Frontend-Team",
+    "cost_center": "z. B. CC-4711"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Max",
+    "last_name": "z. B. Mustermann",
+    "email": "max@example.com",
+    "phone": "z. B. +49 30 12345678",
+    "active": "Ist die Person aktiv?",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Welchem Team angehörig?"
+  },
+  "TicketsDialog.tsx": {
+    "assigned_agent": "Wer bearbeitet das Ticket?",
+    "team": "Welches Team ist verantwortlich?",
+    "parent_ticket": "Übergeordnetes Ticket wählen",
+    "title": "z. B. Drucker funktioniert nicht",
+    "description": "Problembeschreibung, Fehlertext, Reproduktionsschritte...",
+    "priority": "z. B. Hoch, Kritisch",
+    "status": "z. B. Neu, In Bearbeitung",
+    "category": "z. B. Hardware, Software",
+    "reporter_name": "z. B. Max Mustermann",
+    "reporter_email": "max@example.com",
+    "reporter_phone": "z. B. +49 30 12345678",
+    "due": "Bis wann soll es gelöst sein?",
+    "opened_on": "Wann wurde das Ticket eröffnet?",
+    "tags": "z. B. VIP, Wiederkehrend",
+    "affected_asset": "Welches Gerät ist betroffen?",
+    "vendor_link": "z. B. https://support.dell.com/...",
+    "estimated_hours": "z. B. 4",
+    "billable": "Ist dieses Ticket abrechenbar?",
+    "resolution": "Wie wurde das Problem gelöst?",
+    "sla_breached": "Wurde das SLA überschritten?",
+    "customer_satisfaction": "Wie zufrieden der Kunde? 1-5",
+    "internal_note": "Nur für Ihren Austausch im Team..."
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket gehört die Notiz?",
+    "text": "Notiz, Kommentar, Beobachtung...",
+    "author": "z. B. Max Mustermann",
+    "visible_to_reporter": "Soll meldende Person dies sehen?"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "pages": {
+    "en": {
+      "Aktive Mitarbeitende": "Active Agents",
+      "Alle Tickets sind auf dem aktuellen Stand.": "All tickets are up to date.",
+      "Alle Tickets sind zugewiesen.": "All tickets are assigned.",
+      "Alles im Zeitplan — kein Ticket ist überfällig.": "All on schedule — no ticket is overdue.",
+      "Als gelöst markieren": "Mark as Resolved",
+      "Gelöst": "Resolved",
+      "Heute fällig": "Due Today",
+      "In Bearbeitung nehmen": "Take Into Progress",
+      "Keine Priorität": "No Priority",
+      "Neu": "New",
+      "Neues Ticket": "New Ticket",
+      "Nicht zugewiesen": "Unassigned",
+      "Offen": "Open",
+      "Ohne Titel": "Untitled",
+      "Schließen": "Close",
+      "Zuweisen": "Assign",
+      "{0} Tickets sind überfällig.": "{0} tickets are overdue.",
+      "{0} bearbeiten aktive Tickets.": "{0} are working on active tickets.",
+      "{0} neue Tickets warten auf Zuweisung.": "{0} new tickets are waiting for assignment.",
+      "{0} neue Tickets — {1} sind aktiv.": "{0} new tickets — {1} are active.",
+      "{0} überfällige und {1} nicht zugewiesene Tickets brauchen Aufmerksamkeit.": "{0} overdue and {1} unassigned tickets need attention.",
+      "Überfällig": "Overdue",
+      "Überfällig & heute fällig": "Overdue & Due Today",
+      "Übernehmen": "Claim",
+      "— kritische Tickets überfällig seit": "— critical tickets overdue since"
+    }
+  },
+  "v": 1
+}
