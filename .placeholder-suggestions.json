@@ -1,0 +1,52 @@
+{
+  "AssetsDialog.tsx": {
+    "name": "z. B. MacBook Pro",
+    "serial_number": "z. B. C02Q7YRYD1CV",
+    "purchased_on": "Wann wurde es gekauft?",
+    "warranty_until": "Wann endet die Garantie?"
+  },
+  "TeamsDialog.tsx": {
+    "lead": "Teamleitung wählen",
+    "name": "z. B. Helpdesk Team A",
+    "cost_center": "z. B. IT-001"
+  },
+  "MitarbeitendeDialog.tsx": {
+    "first_name": "z. B. Anna",
+    "last_name": "z. B. Müller",
+    "email": "z. B. anna.mueller@it.de",
+    "phone": "z. B. +49 123 45678",
+    "active": "Ist diese/r Mitarbeitende aktiv?",
+    "working_hours_per_week": "z. B. 40",
+    "team": "Welches Team?"
+  },
+  "TicketsDialog.tsx": {
+    "assigned_agent": "Wem zuweisen?",
+    "team": "In welches Team?",
+    "parent_ticket": "Übergeordnetes Ticket wählen",
+    "title": "z. B. Drucker antwortet nicht",
+    "description": "Was ist das Problem? Wann ist es aufgetreten?",
+    "priority": "Wie dringend?",
+    "status": "Welcher Status?",
+    "category": "z. B. Hardware, Software",
+    "reporter_name": "Name der Person, die das Problem meldet",
+    "reporter_email": "z. B. benutzer@unternehmen.de",
+    "reporter_phone": "z. B. +49 123 4567",
+    "due": "Bis wann muss es gelöst sein?",
+    "opened_on": "Wann wurde es eröffnet?",
+    "tags": "z. B. VIP, Sicherheit, Wiederkehrend",
+    "affected_asset": "Welches Hardware-Asset betroffen?",
+    "vendor_link": "z. B. https://support.vendor.de/...",
+    "estimated_hours": "z. B. 2",
+    "billable": "Ist dieses Ticket abrechenbar?",
+    "resolution": "Wie wurde das Problem gelöst?",
+    "sla_breached": "SLA-Verstoß vorhanden?",
+    "customer_satisfaction": "Wie zufrieden ist der Kunde?",
+    "internal_note": "Interne Anmerkungen, Tipps für künftige Tickets..."
+  },
+  "NotizenDialog.tsx": {
+    "ticket": "Zu welchem Ticket?",
+    "text": "Was möchtest du notieren?",
+    "author": "z. B. Dein Name",
+    "visible_to_reporter": "Soll die meldende Person diese Notiz sehen?"
+  }
+}

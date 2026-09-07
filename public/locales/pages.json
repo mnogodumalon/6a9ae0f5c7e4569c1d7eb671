@@ -1,0 +1,38 @@
+{
+  "pages": {
+    "en": {
+      "Aktive Agents": "Active Agents",
+      "Alle Tickets erledigt — super!": "All tickets resolved — great job!",
+      "Alle Tickets erledigt — {0} im Dienst.": "All tickets resolved — {0} on duty.",
+      "Als gelöst markieren": "Mark as Resolved",
+      "Annehmen": "Accept",
+      "Handlungsbedarf": "Action Required",
+      "Heute neu": "New Today",
+      "In Bearbeitung setzen": "Set to In Progress",
+      "Kein akuter Handlungsbedarf.": "No immediate action required.",
+      "Kritisch": "Critical",
+      "Kritische Tickets": "Critical Tickets",
+      "Lösen": "Resolve",
+      "Nicht zugewiesen": "Unassigned",
+      "Notizen": "Notes",
+      "Offen": "Open",
+      "Ohne Titel": "Untitled",
+      "Schließen": "Close",
+      "Ticket erstellen": "Create Ticket",
+      "Tickets nach Kategorie": "Tickets by Category",
+      "Unbekannt": "Unknown",
+      "Unzugewiesen": "Unassigned",
+      "Unzugewiesene Tickets": "Unassigned Tickets",
+      "{0} Tickets überfällig — {1} warten auf Antwort.": "{0} tickets overdue — {1} awaiting response.",
+      "{0} neue Tickets heute. {1} im Dienst.": "{0} new tickets today. {1} on duty.",
+      "{0} offene Tickets. {1} im Einsatz.": "{0} open tickets. {1} on duty.",
+      "Ältestes öffnen": "Open Oldest",
+      "Überfällig": "Overdue",
+      "Überfällige Tickets": "Overdue Tickets",
+      "Überfälliges Ticket von {0} — sofort handeln.": "Overdue ticket from {0} — take immediate action.",
+      "— {0} Tickets überfällig.": "— {0} tickets overdue.",
+      "— überfällig seit {0}.": "— overdue since {0}."
+    }
+  },
+  "v": 1
+}

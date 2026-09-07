@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Assets": {
+      "placeholders_set": 4,
+      "defaults_keys": ["purchased_on", "warranty_until"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten für Hardware-Assets (Name, Seriennummer, Daten). Keine Preise, keine Applookups, keine berechenbaren Aggregate — nothing zu rechnen."
+    },
+    "Teams": {
+      "placeholders_set": 3,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Reine Organisationsstruktur (Team-Name, Kostenstelle, Lead-Mitarbeiter). Die Stundensätze des Lead sind informativ, kein Aggregate nötig — Teams selbst generiert keine Geldbeträge."
+    },
+    "Mitarbeitende": {
+      "placeholders_set": 7,
+      "defaults_keys": ["active"],
+      "computed_keys": [],
+      "reason": "Reine Stammdaten für Mitarbeiter (Name, E-Mail, Telefon, Stundensatz, Team). Aktiv-Bool wird beim Anlegen auf true vorbelegt. Keine Preisberechnungen nötig."
+    },
+    "Tickets": {
+      "placeholders_set": 19,
+      "defaults_keys": ["opened_on", "due", "status", "priority", "estimated_hours"],
+      "computed_keys": [],
+      "reason": "Ticket-Management: geschätzte Stunden ist ein Input-Feld, nicht berechnet. Keine applookup auf einen Stundensatz, daher keine Arbeitskosten-Formel. Status/Priorität werden mit sensiblen Defaults vorbelegt (Neu, Mittel). Dauer und Kosten sind nicht aus den Stammdaten ableitbar — gehören in Manual-Input."
+    },
+    "Notizen": {
+      "placeholders_set": 4,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Reine Kommentar-Entity (Ticket-Link, Text, Autor, Sichtbarkeit). Keine Struktur, die eine Berechnung rechtfertigen würde."
+    }
+  }
+}
