@@ -20,6 +20,7 @@
 import type { ComponentType } from 'react';
 
 // <custom:intent-imports>
+import { IconTicket, IconUserCheck, IconNotes } from '@tabler/icons-react';
 // </custom:intent-imports>
 
 export interface IntentLink {
@@ -42,6 +43,9 @@ export interface IntentLink {
 
 export const INTENTS: IntentLink[] = [
   // <custom:intents>
+  { path: '/intents/neues-ticket', label: { de: 'Neues Ticket', en: 'New ticket' }, icon: IconTicket, description: 'Neues Support-Ticket in 3 Schritten anlegen' },
+  { path: '/intents/ticket-zuweisen', label: { de: 'Ticket zuweisen', en: 'Assign ticket' }, icon: IconUserCheck, description: 'Ticket einem Agenten und Team zuweisen oder neu zuweisen' },
+  { path: '/intents/notiz-hinzufuegen', label: { de: 'Notiz hinzufügen', en: 'Add note' }, icon: IconNotes, description: 'Interne oder externe Notiz zu einem Ticket hinzufuegen' },
   // </custom:intents>
 ];
 
@@ -52,7 +56,7 @@ export const INTENTS: IntentLink[] = [
  * purpose — a scaffold update resets it to false (self-healing if Phase 2
  * never ran).
  */
-export const INTENTS_PENDING = true;
+export const INTENTS_PENDING = false;
 
 /**
  * When the Phase-1 bundle was deployed (ISO, set by the service together with
