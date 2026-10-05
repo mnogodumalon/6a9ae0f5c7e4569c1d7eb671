@@ -4,6 +4,7 @@ import { extractRecordId } from '@/services/livingAppsService';
 import {
   RecordSection, RecordField, RecordRelation, RecordAttachments,
 } from '@/components/widgets/RecordView';
+import { usePermissions } from '@/lib/permissions';
 import { t, appLabel, fieldLabel } from '@/i18n';
 
 export interface NotizenDetailsProps {
@@ -20,6 +21,8 @@ export function NotizenDetails({
   ticketsList,
   onOpenTickets,
 }: NotizenDetailsProps) {
+  // attachments are a write to this record — read-only without the platform right
+  const perms = usePermissions();
   const ticketTarget = ticketsList.find(r => r.record_id === extractRecordId(record.fields.ticket));
   return (
     <>
@@ -39,7 +42,7 @@ export function NotizenDetails({
         />
       </RecordSection>
 
-      <RecordAttachments appId={APP_IDS.NOTIZEN} recordId={record.record_id} />
+      <RecordAttachments appId={APP_IDS.NOTIZEN} recordId={record.record_id} readOnly={!perms.canWrite('notizen')} />
     </>
   );
 }

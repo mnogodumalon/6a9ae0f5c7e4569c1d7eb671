@@ -125,6 +125,22 @@ for (const call of src.matchAll(/\.(?:list|count)\(\s*['"](\w+)['"]\s*,\s*\{/g))
   probes.push({ entity: call[1], filter: f[2], dynamic: f[2].includes('${'), where: null, line: lineOf(call.index) });
 }
 
+// A generated flow hook carries the page's searches — probe its filters too.
+for (const m of src.matchAll(/from\s*['"]@\/lib\/journey\/flows\/(\w+)['"]/g)) {
+  const hookFile = `src/lib/journey/flows/${m[1]}.ts`;
+  if (!existsSync(hookFile)) continue;
+  const hsrc = readFileSync(hookFile, 'utf8');
+  for (const call of hsrc.matchAll(/useRecordSearch\(\s*\w+\s*,\s*['"](\w+)['"]/g)) {
+    const open = hsrc.indexOf('{', call.index + call[0].length);
+    const end = open < 0 ? -1 : balancedEnd(hsrc, open);
+    if (end < 0) continue;
+    const opts = hsrc.slice(open, end + 1);
+    const f = /\bfilter\s*:\s*(['"`])([\s\S]*?)\1/.exec(opts);
+    if (!f) continue;
+    probes.push({ entity: call[1], filter: f[2], dynamic: f[2].includes('${'), where: whereSource(opts), line: 0, label: `${hookFile} (flow hook)` });
+  }
+}
+
 if (probes.length === 0) {
   console.log(`check-vsql: OK (${rel} — no filters to probe)`);
   process.exit(0);

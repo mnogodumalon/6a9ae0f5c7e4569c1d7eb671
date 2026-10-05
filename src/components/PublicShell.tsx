@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { IconLoader2, IconEye } from '@tabler/icons-react';
 import { t } from '@/i18n';
 import { isPreviewMode } from '@/lib/publicClient';
+import { PublicColumnContext } from '@/lib/journey/publicColumn';
 
 // Layout shell for public (anonymous) pages — the public counterpart to
 // IntentWizardShell. Owns the page chrome every public page shares: centered
@@ -17,7 +18,9 @@ import { isPreviewMode } from '@/lib/publicClient';
 interface PublicShellProps {
   title?: string;
   description?: string;
-  /** Wider column for list/booking layouts (max-w-2xl instead of the 640px default). */
+  /** Wider column for list layouts (max-w-2xl instead of the 640px default).
+   *  A wizard needs no flag: IntentWizardShell registers itself and the shell
+   *  widens to the intent pages' column (max-w-4xl) on its own. */
   wide?: boolean;
   /** Landing mode: children own the FULL page width — build full-bleed
    *  sections (hero bands, card grids) with their own inner max-w
@@ -40,16 +43,21 @@ interface PublicShellProps {
 }
 
 export function PublicShell({ title, description, wide, fullBleed, plain, loading, unavailable, children }: PublicShellProps) {
+  // A wizard inside the card asks for the wizard column (see publicColumn.ts):
+  // two calendar months need ~672px of container, the 640px form column gave
+  // one month and clipped record cards (live).
+  const [wizard, setWizard] = useState(false);
+  const column = wizard ? 'max-w-4xl' : wide ? 'max-w-2xl' : 'max-w-[640px]';
   let body: ReactNode;
   if (loading) {
     body = (
-      <div className="flex justify-center pt-16">
+      <div className="flex justify-center pt-16" data-public-loading="">
         <IconLoader2 size={28} stroke={1.5} className="animate-spin text-muted-foreground" />
       </div>
     );
   } else if (unavailable) {
     body = (
-      <div className="rounded-[27px] bg-card shadow-lg p-6 sm:p-8 text-center">
+      <div className="rounded-[27px] bg-card shadow-lg p-6 sm:p-8 text-center" data-public-unavailable="">
         <h1 className="text-xl font-medium mb-2">{t('pf_unavailable_title')}</h1>
         <p className="text-muted-foreground">{t('pps_unavailable_message')}</p>
       </div>
@@ -111,8 +119,8 @@ export function PublicShell({ title, description, wide, fullBleed, plain, loadin
           <span>{t('ps_preview_banner')}</span>
         </div>
       ) : null}
-      <main className={`flex-1 w-full ${constrained ? `${wide ? 'max-w-2xl' : 'max-w-[640px]'} mx-auto px-4 py-8 sm:py-12` : ''}`}>
-        {body}
+      <main className={`flex-1 w-full ${constrained ? `${column} mx-auto px-4 py-8 sm:py-12` : ''}`}>
+        <PublicColumnContext.Provider value={setWizard}>{body}</PublicColumnContext.Provider>
       </main>
       <footer className="py-4 text-center text-xs text-muted-foreground">
         {t('pf_powered_by_text')}

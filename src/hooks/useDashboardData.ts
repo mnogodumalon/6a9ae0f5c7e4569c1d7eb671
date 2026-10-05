@@ -35,29 +35,50 @@ export function useDashboardData(options: DashboardDataOptions = {}) {
   const [notizen, setNotizen] = useState<Notizen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  /** Lists the signed-in user may not read (403 on the platform). They load as
+   *  empty and the rest of the page loads normally — one forbidden list used to
+   *  empty the whole dashboard (05.10.2026). Hide a block whose list is here. */
+  const [forbidden, setForbidden] = useState<DashboardEntity[]>([]);
+
+  // Every list on its own: a 403 is „not yours“, any other failure is an error.
+  const settle = useCallback((settled: PromiseSettledResult<unknown>[]) => {
+    const denied: DashboardEntity[] = [];
+    let failure: unknown = null;
+    // null = this list failed for another reason: its current data stays
+    const pick = <T,>(i: number, key: DashboardEntity): T[] | null => {
+      const s = settled[i];
+      if (s.status === 'fulfilled') return s.value as T[];
+      if ((s.reason as { status?: number } | null)?.status === 403) { denied.push(key); return []; }
+      failure = failure ?? s.reason;
+      return null;
+    };
+    { const rows = pick<Assets>(0, 'assets'); if (rows) setAssets(rows); }
+    { const rows = pick<Teams>(1, 'teams'); if (rows) setTeams(rows); }
+    { const rows = pick<Mitarbeitende>(2, 'mitarbeitende'); if (rows) setMitarbeitende(rows); }
+    { const rows = pick<Tickets>(3, 'tickets'); if (rows) setTickets(rows); }
+    { const rows = pick<Notizen>(4, 'notizen'); if (rows) setNotizen(rows); }
+    setForbidden(prev => (prev.join('|') === denied.join('|') ? prev : denied));
+    return failure;
+  }, []);
 
   const fetchAll = useCallback(async () => {
     setError(null);
     const omit = new Set(omitKey ? omitKey.split('|') : []);
     try {
-      const [assetsData, teamsData, mitarbeitendeData, ticketsData, notizenData] = await Promise.all([
+      const failure = settle(await Promise.allSettled([
         omit.has('assets') ? Promise.resolve([] as Assets[]) : LivingAppsService.getAssets(),
         omit.has('teams') ? Promise.resolve([] as Teams[]) : LivingAppsService.getTeams(),
         omit.has('mitarbeitende') ? Promise.resolve([] as Mitarbeitende[]) : LivingAppsService.getMitarbeitende(),
         omit.has('tickets') ? Promise.resolve([] as Tickets[]) : LivingAppsService.getTickets(),
         omit.has('notizen') ? Promise.resolve([] as Notizen[]) : LivingAppsService.getNotizen(),
-      ]);
-      setAssets(assetsData);
-      setTeams(teamsData);
-      setMitarbeitende(mitarbeitendeData);
-      setTickets(ticketsData);
-      setNotizen(notizenData);
+      ]));
+      if (failure) throw failure;
     } catch (err) {
       setError(err instanceof Error ? err : new Error(t('data_load_failed')));
     } finally {
       setLoading(false);
     }
-  }, [omitKey]);
+  }, [omitKey, settle]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -66,18 +87,15 @@ export function useDashboardData(options: DashboardDataOptions = {}) {
     const omit = new Set(omitKey ? omitKey.split('|') : []);
     async function silentRefresh() {
       try {
-        const [assetsData, teamsData, mitarbeitendeData, ticketsData, notizenData] = await Promise.all([
+        // a failed list keeps its stale data out of the way: settle() only
+        // replaces what loaded or was refused
+        settle(await Promise.allSettled([
           omit.has('assets') ? Promise.resolve([] as Assets[]) : LivingAppsService.getAssets(),
           omit.has('teams') ? Promise.resolve([] as Teams[]) : LivingAppsService.getTeams(),
           omit.has('mitarbeitende') ? Promise.resolve([] as Mitarbeitende[]) : LivingAppsService.getMitarbeitende(),
           omit.has('tickets') ? Promise.resolve([] as Tickets[]) : LivingAppsService.getTickets(),
           omit.has('notizen') ? Promise.resolve([] as Notizen[]) : LivingAppsService.getNotizen(),
-        ]);
-        setAssets(assetsData);
-        setTeams(teamsData);
-        setMitarbeitende(mitarbeitendeData);
-        setTickets(ticketsData);
-        setNotizen(notizenData);
+        ]));
       } catch {
         // silently ignore — stale data is better than no data
       }
@@ -89,7 +107,7 @@ export function useDashboardData(options: DashboardDataOptions = {}) {
     // both here, or every mutation fetches twice.
     window.addEventListener('assistant:data-changed', handleRefresh);
     return () => window.removeEventListener('assistant:data-changed', handleRefresh);
-  }, [omitKey]);
+  }, [omitKey, settle]);
 
   const assetsMap = useMemo(() => {
     const m = new Map<string, Assets>();
@@ -115,7 +133,7 @@ export function useDashboardData(options: DashboardDataOptions = {}) {
     return m;
   }, [tickets]);
 
-  return { assets, setAssets, teams, setTeams, mitarbeitende, setMitarbeitende, tickets, setTickets, notizen, setNotizen, loading, error, fetchAll, assetsMap, teamsMap, mitarbeitendeMap, ticketsMap };
+  return { assets, setAssets, teams, setTeams, mitarbeitende, setMitarbeitende, tickets, setTickets, notizen, setNotizen, loading, error, fetchAll, forbidden, assetsMap, teamsMap, mitarbeitendeMap, ticketsMap };
 }
 
 /** The hook's return — the `data` prop of DashboardOverview in the Ready-Wrapper form. */

@@ -34,7 +34,9 @@
  * Built in (do NOT re-implement): optimistic update + Rückgängig counter-write
  * on edit, fetchAll-on-error, edit-from-overlay, and per-entity overlay bodies
  * (RecordHeader + <{Entity}Details> with every relation reachable and the
- * contextual "+" prefilled). Drag writes (onEventDrop/onCardMove) stay YOURS:
+ * contextual "+" prefilled; list-field back-references additionally get a
+ * "choose existing" picker that links an EXISTING record — built in, do not
+ * re-roll). Drag writes (onEventDrop/onCardMove) stay YOURS:
  * optimistic setter first, PATCH in background, undoToast with counter-write.
  *
  * Overlay content per entity (the host renders these — you never compose
@@ -69,6 +71,8 @@ import { NotizenDetails } from '@/components/details/NotizenDetails';
 import { AI_PHOTO_SCAN, AI_PHOTO_LOCATION } from '@/config/ai-features';
 import { t, appLabel } from '@/i18n';
 import { undoToast } from '@/lib/polish';
+import { usePermissions } from '@/lib/permissions';
+import { toast } from 'sonner';
 import { formatDate } from '@/lib/formatters';
 
 // The overlay union — one branch per entity, `record` typed the way the data
@@ -98,6 +102,10 @@ export interface EntityCrudApi<TRecord, TDefaults> {
   openEdit: (record: TRecord) => void;
   /** Open the record overlay (raw record is fine — enrichment resolved inside). */
   openDetail: (record: TRecord) => void;
+  /** May the signed-in user create/change records of this list? (the
+   *  platform's rights — show a „+ Neu“ only when true; openCreate/openEdit
+   *  refuse with a notice otherwise). */
+  canWrite: boolean;
 }
 
 export interface EntityCrud {
@@ -118,6 +126,9 @@ export interface EntityCrud {
 
 export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions): EntityCrud {
   const overlay = useRecordOverlayStack<OverlayItem>();
+  // the platform's rights of the signed-in user (lib/permissions.ts) — unknown = allowed
+  const perms = usePermissions();
+  const refuse = () => { toast.error(t('perm_denied_title'), { description: t('perm_denied_desc') }); };
   const [assetsDialog, setAssetsDialog] = useState<{ defaults?: AssetsDialogDefaults; editing?: Assets } | null>(null);
   const [teamsDialog, setTeamsDialog] = useState<{ defaults?: TeamsDialogDefaults; editing?: Teams } | null>(null);
   const [mitarbeitendeDialog, setMitarbeitendeDialog] = useState<{ defaults?: MitarbeitendeDialogDefaults; editing?: Mitarbeitende } | null>(null);
@@ -339,7 +350,7 @@ export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions)
                   record={top.record}
                   ticketsList={data.tickets}
                   onOpenTickets={(r) => detailTickets(r, true)}
-                  onAddTickets={() => setTicketsDialog({ defaults: { affected_asset: createRecordUrl(APP_IDS.ASSETS, top.record.record_id) } })}
+                  onAddTickets={perms.canWrite('tickets') ? () => setTicketsDialog({ defaults: { affected_asset: createRecordUrl(APP_IDS.ASSETS, top.record.record_id) } }) : undefined}
                 />
               </>
             );
@@ -352,10 +363,12 @@ export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions)
                   record={top.record}
                   mitarbeitendeList={data.mitarbeitende}
                   onOpenMitarbeitende={(r) => detailMitarbeitende(r, true)}
-                  onAddMitarbeitende={() => setMitarbeitendeDialog({ defaults: { team: createRecordUrl(APP_IDS.TEAMS, top.record.record_id) } })}
+                  mitarbeitendeTeamList={data.mitarbeitende}
+                  onOpenMitarbeitendeTeam={(r) => detailMitarbeitende(r, true)}
+                  onAddMitarbeitendeTeam={perms.canWrite('mitarbeitende') ? () => setMitarbeitendeDialog({ defaults: { team: createRecordUrl(APP_IDS.TEAMS, top.record.record_id) } }) : undefined}
                   ticketsList={data.tickets}
                   onOpenTickets={(r) => detailTickets(r, true)}
-                  onAddTickets={() => setTicketsDialog({ defaults: { team: createRecordUrl(APP_IDS.TEAMS, top.record.record_id) } })}
+                  onAddTickets={perms.canWrite('tickets') ? () => setTicketsDialog({ defaults: { team: createRecordUrl(APP_IDS.TEAMS, top.record.record_id) } }) : undefined}
                 />
               </>
             );
@@ -368,10 +381,12 @@ export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions)
                   record={top.record}
                   teamsList={data.teams}
                   onOpenTeams={(r) => detailTeams(r, true)}
-                  onAddTeams={() => setTeamsDialog({ defaults: { lead: createRecordUrl(APP_IDS.MITARBEITENDE, top.record.record_id) } })}
+                  teamsLeadList={data.teams}
+                  onOpenTeamsLead={(r) => detailTeams(r, true)}
+                  onAddTeamsLead={perms.canWrite('teams') ? () => setTeamsDialog({ defaults: { lead: createRecordUrl(APP_IDS.MITARBEITENDE, top.record.record_id) } }) : undefined}
                   ticketsList={data.tickets}
                   onOpenTickets={(r) => detailTickets(r, true)}
-                  onAddTickets={() => setTicketsDialog({ defaults: { assigned_agent: createRecordUrl(APP_IDS.MITARBEITENDE, top.record.record_id) } })}
+                  onAddTickets={perms.canWrite('tickets') ? () => setTicketsDialog({ defaults: { assigned_agent: createRecordUrl(APP_IDS.MITARBEITENDE, top.record.record_id) } }) : undefined}
                 />
               </>
             );
@@ -392,7 +407,7 @@ export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions)
                   onOpenAssets={(r) => detailAssets(r, true)}
                   notizenList={data.notizen}
                   onOpenNotizen={(r) => detailNotizen(r, true)}
-                  onAddNotizen={() => setNotizenDialog({ defaults: { ticket: createRecordUrl(APP_IDS.TICKETS, top.record.record_id) } })}
+                  onAddNotizen={perms.canWrite('notizen') ? () => setNotizenDialog({ defaults: { ticket: createRecordUrl(APP_IDS.TICKETS, top.record.record_id) } }) : undefined}
                 />
               </>
             );
@@ -411,6 +426,14 @@ export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions)
           }
           return null;
         }}
+        canEdit={(top) => {
+          if (top.type === 'assets') return perms.canWrite('assets');
+          if (top.type === 'teams') return perms.canWrite('teams');
+          if (top.type === 'mitarbeitende') return perms.canWrite('mitarbeitende');
+          if (top.type === 'tickets') return perms.canWrite('tickets');
+          if (top.type === 'notizen') return perms.canWrite('notizen');
+          return true;
+        }}
         onEdit={(top) => {
           overlay.close();
           if (top.type === 'assets') setAssetsDialog({ editing: top.record, defaults: top.record.fields });
@@ -427,29 +450,34 @@ export function useEntityCrud(data: EntityCrudData, options?: EntityCrudOptions)
     overlay,
     surfaces,
     assets: {
-      openCreate: (defaults?: AssetsDialogDefaults) => setAssetsDialog({ defaults }),
-      openEdit: (record: Assets) => setAssetsDialog({ editing: record, defaults: record.fields }),
+      openCreate: (defaults?: AssetsDialogDefaults) => (perms.canWrite('assets') ? setAssetsDialog({ defaults }) : refuse()),
+      openEdit: (record: Assets) => (perms.canWrite('assets') ? setAssetsDialog({ editing: record, defaults: record.fields }) : refuse()),
       openDetail: (record: Assets) => detailAssets(record, false),
+      canWrite: perms.canWrite('assets'),
     },
     teams: {
-      openCreate: (defaults?: TeamsDialogDefaults) => setTeamsDialog({ defaults }),
-      openEdit: (record: Teams) => setTeamsDialog({ editing: record, defaults: record.fields }),
+      openCreate: (defaults?: TeamsDialogDefaults) => (perms.canWrite('teams') ? setTeamsDialog({ defaults }) : refuse()),
+      openEdit: (record: Teams) => (perms.canWrite('teams') ? setTeamsDialog({ editing: record, defaults: record.fields }) : refuse()),
       openDetail: (record: Teams) => detailTeams(record, false),
+      canWrite: perms.canWrite('teams'),
     },
     mitarbeitende: {
-      openCreate: (defaults?: MitarbeitendeDialogDefaults) => setMitarbeitendeDialog({ defaults }),
-      openEdit: (record: Mitarbeitende) => setMitarbeitendeDialog({ editing: record, defaults: record.fields }),
+      openCreate: (defaults?: MitarbeitendeDialogDefaults) => (perms.canWrite('mitarbeitende') ? setMitarbeitendeDialog({ defaults }) : refuse()),
+      openEdit: (record: Mitarbeitende) => (perms.canWrite('mitarbeitende') ? setMitarbeitendeDialog({ editing: record, defaults: record.fields }) : refuse()),
       openDetail: (record: Mitarbeitende) => detailMitarbeitende(record, false),
+      canWrite: perms.canWrite('mitarbeitende'),
     },
     tickets: {
-      openCreate: (defaults?: TicketsDialogDefaults) => setTicketsDialog({ defaults }),
-      openEdit: (record: Tickets) => setTicketsDialog({ editing: record, defaults: record.fields }),
+      openCreate: (defaults?: TicketsDialogDefaults) => (perms.canWrite('tickets') ? setTicketsDialog({ defaults }) : refuse()),
+      openEdit: (record: Tickets) => (perms.canWrite('tickets') ? setTicketsDialog({ editing: record, defaults: record.fields }) : refuse()),
       openDetail: (record: Tickets) => detailTickets(record, false),
+      canWrite: perms.canWrite('tickets'),
     },
     notizen: {
-      openCreate: (defaults?: NotizenDialogDefaults) => setNotizenDialog({ defaults }),
-      openEdit: (record: Notizen) => setNotizenDialog({ editing: record, defaults: record.fields }),
+      openCreate: (defaults?: NotizenDialogDefaults) => (perms.canWrite('notizen') ? setNotizenDialog({ defaults }) : refuse()),
+      openEdit: (record: Notizen) => (perms.canWrite('notizen') ? setNotizenDialog({ editing: record, defaults: record.fields }) : refuse()),
       openDetail: (record: Notizen) => detailNotizen(record, false),
+      canWrite: perms.canWrite('notizen'),
     },
     enriched: { assets: data.assets, teams: enrichedTeams, mitarbeitende: enrichedMitarbeitende, tickets: enrichedTickets, notizen: enrichedNotizen },
   };

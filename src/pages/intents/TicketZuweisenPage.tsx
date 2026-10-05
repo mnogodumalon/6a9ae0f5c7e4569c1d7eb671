@@ -54,7 +54,7 @@ export default function TicketZuweisenPage() {
   // Step 2: Active agents only
   const agenten = useRecordSearch(servicePort, 'mitarbeitende', {
     searchFields: ['first_name', 'last_name', 'email'],
-    filter: "r.v_active == True",
+    filter: "r.v_active == True", /* i18n-exempt */
     where: r => r.fields['active'] === true,
     toItem: r => ({
       id: r.id,

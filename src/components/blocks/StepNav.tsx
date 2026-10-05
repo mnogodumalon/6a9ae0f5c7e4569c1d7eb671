@@ -50,6 +50,10 @@ export function StepNav({
   className = '',
 }: StepNavProps) {
   const wizard = useWizard();
+  // Tell the shell this step has a Weiter: a single pick on the same step
+  // then leaves moving on to the button instead of doing it itself.
+  const registerNav = wizard?.registerNav;
+  useEffect(() => registerNav?.(), [registerNav]);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // The reason stays only until the user acts again — a line that survives the
@@ -111,7 +115,7 @@ export function StepNav({
   return (
     <div className={`flex flex-wrap items-center gap-3 border-t border-border pt-4 mt-6 ${className}`}>
       {showBack ? (
-        <Button type="button" variant="ghost" onClick={handleBack} className="gap-1.5">
+        <Button type="button" variant="ghost" onClick={handleBack} className="gap-1.5" data-journey-back="">
           <IconArrowLeft size={16} aria-hidden="true" />
           {backLabel ?? t('sn_back')}
         </Button>
@@ -123,7 +127,7 @@ export function StepNav({
         {message && <p role="alert" className="text-destructive">{message}</p>}
       </div>
       {!atEnd && (
-        <Button type="button" onClick={handleNext} disabled={nextDisabled || working} className="gap-1.5">
+        <Button type="button" onClick={handleNext} disabled={nextDisabled || working} className="gap-1.5" data-journey-next="">
           {working ? <IconLoader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
           {label}
           {!working && <IconArrowRight size={16} aria-hidden="true" />}

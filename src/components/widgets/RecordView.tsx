@@ -994,6 +994,9 @@ export interface RecordOverlayHostProps<T> {
   footer?: (top: T) => RecordOverlayFooter;
   /** Bearbeiten-Pfad für den obersten Eintrag. */
   onEdit?: (top: T) => void;
+  /** Darf der oberste Eintrag bearbeitet werden? (die Rechte der Plattform —
+   *  ohne Schreibrecht kein Bearbeiten-Knopf). Fehlt = ja. */
+  canEdit?: (top: T) => boolean;
   placement?: RecordOverlayProps['placement'];
   size?: RecordOverlayProps['size'];
   className?: string;
@@ -1007,14 +1010,14 @@ export interface RecordOverlayHostProps<T> {
  * jedem Drill und blinkt). Back erscheint automatisch ab Stack-Tiefe 2;
  * der Body-Scroll startet bei jedem Navigationsschritt oben.
  */
-export function RecordOverlayHost<T>({ overlay, render, footer, onEdit, placement, size, className }: RecordOverlayHostProps<T>) {
+export function RecordOverlayHost<T>({ overlay, render, footer, onEdit, canEdit, placement, size, className }: RecordOverlayHostProps<T>) {
   const top = overlay.top;
   return (
     <RecordOverlay
       open={overlay.open && top != null}
       onClose={overlay.close}
       onBack={overlay.canGoBack ? overlay.pop : undefined}
-      onEdit={top != null && onEdit ? () => onEdit(top) : undefined}
+      onEdit={top != null && onEdit && (!canEdit || canEdit(top)) ? () => onEdit(top) : undefined}
       footer={top != null ? footer?.(top) : undefined}
       scrollKey={overlay.stack.length}
       placement={placement}

@@ -26,7 +26,7 @@ export default function NotizHinzufuegenPage() {
   const [step, setStep] = useState(1);
 
   const tickets = useRecordSearch(servicePort, 'tickets', {
-    filter: "r.v_status != 'closed'",
+    filter: "r.v_status != 'closed'", /* i18n-exempt */
     where: r => fieldLookup(r, 'status')?.key !== 'closed',
     searchFields: ['title', 'reporter_name'],
     toItem: t => ({

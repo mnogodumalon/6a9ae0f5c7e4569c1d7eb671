@@ -147,8 +147,10 @@ async function callApi(method: string, endpoint: string, data?: any, options?: C
     throw netErr;
   }
   if (!response.ok) {
-    // 401/403 go to the login screen only — never to the errorbus (repair can't fix auth).
-    const isAuthError = response.status === 401 || response.status === 403;
+    // 401 = not signed in → the login screen, never the errorbus (repair can't fix auth).
+    // 403 = signed in, but this list is not theirs to read or write: a notice,
+    // the page stays (05.10.2026 — it used to say „not logged in“ and blank everything).
+    const isAuthError = response.status === 401;
     if (isAuthError) window.dispatchEvent(new Event('auth-error'));
     const { message, raw } = await parseErrorBody(response);
     const err = new LivingAppsApiError(message, response.status, raw);
@@ -185,7 +187,10 @@ export async function uploadFile(file: File | Blob, filename?: string): Promise<
     body: formData,
   });
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) window.dispatchEvent(new Event('auth-error'));
+    if (res.status === 401) window.dispatchEvent(new Event('auth-error'));
+    else if (res.status === 403) window.dispatchEvent(new CustomEvent('errorbus:emit', { detail: {
+      source: 'api', status: 403, message: 'File upload failed: 403',
+    } }));
     throw new Error(`File upload failed: ${res.status}`);
   }
   const data = await res.json();

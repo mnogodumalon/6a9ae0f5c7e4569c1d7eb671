@@ -79,6 +79,19 @@ if (pages.length > 0) {
     const file = pageFile(name);
     const src = readFileSync(file, 'utf8');
 
+    // fieldText is the DISPLAY text („12.10.2026, 11:00“); new Date()/parseISO
+    // read it month-first — salon 05.10.2026 showed Monday 12 Oct as
+    // „Donnerstag, 10.12.2026“. Anything computed or formatted from a date
+    // reads fieldDate (ISO).
+    {
+      const textVars = [...src.matchAll(/(?:const|let)\s+(\w+)\s*=\s*fieldText\(/g)].map(m => m[1]);
+      const direct = /(?:new Date|parseISO)\(\s*fieldText\(/.test(src);
+      const viaVar = textVars.some(v => new RegExp(`(?:new Date|parseISO)\\(\\s*${v}\\b`).test(src));
+      if (direct || viaVar) {
+        errors.push(`${file}: a fieldText(...) value goes into new Date()/parseISO — fieldText is the DISPLAY text ('12.10.2026, 11:00'), which Date reads month-first (12 Oct became 10 Dec, live). Use fieldDate(r, key) — the ISO value — for anything computed or formatted from a date`);
+      }
+    }
+
     // 1. Imported and routed? (not from staging — the band wires later)
     if (!pageOnly && !appSrc.includes(`@/pages/intents/${name}`)) {
       errors.push(`${APP}: no import for '${name}' — add it inside <custom:imports> and route it in <custom:routes>`);
@@ -99,8 +112,25 @@ if (pages.length > 0) {
     //     used (forms+submit, result) but not THAT they are rendered — a flow
     //     that skips the review step or hand-rolls its success screen compiles
     //     fine and ships below the floor. So this is a presence check.
-    if (!/useJourneySubmit\s*\(/.test(src)) {
-      errors.push(`${file}: no useJourneySubmit(...) — every flow writes through the plan runner (import { useJourneySubmit } from '@/lib/journey'; const submit = useJourneySubmit(servicePort, [{ key, entity, form, primary: true }], { draftKey }))`);
+    // A generated flow hook (`use<Pascal>Flow` from @/lib/journey/flows/…) IS the
+    //     plan runner: it owns useStepForm/useRecordSearch/useJourneySubmit, the
+    //     page only composes. With a hook the page must NOT reach for the raw
+    //     plumbing — that is the whole point: a page that only calls flow.submit
+    //     cannot write a field the plan does not know.
+    const hookImport = /import\s*\{[^}]*\buse([A-Z]\w*)Flow\b[^}]*\}\s*from\s*['"]@\/lib\/journey\/flows\/(\w+)['"]/.exec(src);
+    const usesFlowHook = !!hookImport && new RegExp(`\\buse${hookImport[1]}Flow\\s*\\(`).test(src);
+    if (usesFlowHook) {
+      const raw = [];
+      if (/\buseStepForm\s*\(/.test(src)) raw.push('useStepForm');
+      if (/\buseJourneySubmit\s*\(/.test(src)) raw.push('useJourneySubmit');
+      if (/\buseRecordSearch\s*\(/.test(src)) raw.push('useRecordSearch');
+      if (/from\s*['"]@\/services\/journeyPort['"]/.test(src)) raw.push('servicePort');
+      if (raw.length) {
+        errors.push(`${file}: uses the flow hook use${hookImport[1]}Flow AND the raw plumbing (${raw.join(', ')}) — the hook owns the form(s), the record searches and the submit plan; compose with flow.forms.<key>, flow.picks.<field>.select + flow.pick()/flow.pickMany(), flow.validateStep(n), flow.submit; availability or a count through the hook's door: useOccupancy(flow.port, entity, { resource }), useRecordCount(flow.port, …). Remove the raw calls.`);
+      }
+    }
+    if (!/useJourneySubmit\s*\(/.test(src) && !usesFlowHook) {
+      errors.push(`${file}: no useJourneySubmit(...) and no flow hook — every flow writes through the plan runner (with a plan: the generated hook use<Pascal>Flow under @/lib/journey/flows; without: import { useJourneySubmit } from '@/lib/journey'; const submit = useJourneySubmit(servicePort, [{ key, entity, form, primary: true }], { draftKey }))`);
     }
     if (!/<SummaryStep[\s/>]/.test(src)) {
       errors.push(`${file}: no <SummaryStep> — render <SummaryStep forms={[…]} submit={submit} whatHappensNext="…" /> as the review step before the write`);
@@ -158,6 +188,20 @@ if (pages.length > 0) {
       errors.push(`${file}:${line}: defaultValue on an input — initial values belong to the form: useStepForm(entity, { initial: { key: value } }) (dates: todayIso() from '@/lib/journey'); an uncontrolled default is never submitted and fails validation`);
     }
 
+    // 3u. A hand-rolled stepper. A page that keeps its own step state and moves
+    //     between steps with its own buttons passes tsc and every gate here, but
+    //     nothing the layer provides works for it: no URL step, no draft resume,
+    //     no "needs" back-link, no focus management — and the render-smoke has
+    //     no "Weiter" to press, so the walk stops at step 1 (live: a five-step
+    //     membership form rebuilt the stepper in 480 lines). The shell IS the
+    //     stepper: IntentWizardShell + StepNav, the page only owns `step`.
+    {
+      const ownsSteps = /\bsetStep\s*\(|\[\s*step\s*,\s*setStep\s*\]|useState\(\s*STEP_/.test(src);
+      const onTheLayer = /<SummaryStep\b|useJourneySubmit\(|\buse[A-Z]\w*Flow\(/.test(src);
+      if (ownsSteps && onTheLayer && !/IntentWizardShell/.test(src)) {
+        errors.push(`${file}: a hand-rolled stepper (own step state and buttons) without IntentWizardShell — wrap the steps in <IntentWizardShell steps={STEPS} currentStep={step} onStepChange={setStep} forms={[…]}> and move between them with <StepNav onNext={…} /> (both under @/components/blocks); the shell owns URL step, draft resume, focus and the buttons the render-smoke presses`);
+      }
+    }
     // 3h. Every bound control sits under a label. The bindings carry id, value,
     //     aria-* — not the label; a step with five bare inputs shipped (live).
     //     <Field form={f} name="key"> renders label, hint and error from the
@@ -169,7 +213,17 @@ if (pages.length > 0) {
         const wrapped = new RegExp(`<(?:Field|Bound)\\b[^>]*\\bname=["']${key}["']`).test(src);
         const labelled = new RegExp(`htmlFor=\\{[^}]*fieldId\\(\\s*['"]${key}['"]`).test(src);
         if (!wrapped && !labelled) {
-          errors.push(`${file}: the control bound with f.…('${key}') has no label — wrap it: <Field form={f} name="${key}">…</Field> (label from the entity's rules, error and hint included; from '@/components/blocks/Field')`);
+          errors.push(`${file}: the control bound with f.…('${key}') has no label — use <Bound form={f} name="${key}" /> (label, control, hint and error in one; from '@/components/blocks/Bound') or wrap your own control: <Field form={f} name="${key}">…</Field>`);
+        }
+      }
+      // A <Field> whose only child is a <Bound> of the same key is redundant —
+      // the layer renders one label either way (Bound sees the enclosing Field).
+      for (const m of src.matchAll(/<Field\b([^>]*)>\s*<Bound\b([^>]*)\/>\s*<\/Field>/g)) {
+        const outer = (/\bname=["'](\w+)["']/.exec(m[1]) || [])[1];
+        const inner = (/\bname=["'](\w+)["']/.exec(m[2]) || [])[1];
+        if (outer && outer === inner) {
+          const line = src.slice(0, m.index).split('\n').length;
+          warnings.push(`${file}:${line}: <Field name="${outer}"> around <Bound name="${outer}"> — Bound already renders label, hint and error; drop the Field (keep its label= or hint= on the Bound)`);
         }
       }
     }
@@ -188,6 +242,74 @@ if (pages.length > 0) {
         const ft = entity && key ? appMeta.apps?.[entity]?.controls?.[key]?.fulltype : undefined;
         if (ft && /applookup|^file|^geo/.test(ft)) {
           errors.push(`${file}: <Bound name="${key}"> on a ${ft} field — Bound has no records to offer; pick '${key}' on its own step (EntitySelectStep fed by useRecordSearch) or render <Field form={${formVar}} name="${key}"><Combobox {...${formVar}.record('${key}')} items={…} /></Field>`);
+        }
+      }
+    }
+
+    // 3n. Lookup values are `{ key, label }` on BOTH doors (the public port
+    //     hydrates the grant's bare keys), a multiplelookup an ARRAY of them. A
+    //     live landing page cast `ausstattung as string[]` and handed React the
+    //     objects as children — React #31 for every visitor, green through tsc.
+    if (appMeta) {
+      const lookupKinds = new Map();
+      for (const app of Object.values(appMeta.apps || {})) {
+        for (const [k, c] of Object.entries(app?.controls || {})) {
+          const ft = c?.fulltype || '';
+          if (ft.startsWith('lookup') || ft.startsWith('multiplelookup')) lookupKinds.set(k, ft);
+        }
+      }
+      const CAST_RE = /\.fields(?:\.(\w+)|\[['"](\w+)['"]\])\s+as\s+(?:string(?:\s*\[\s*\])?|Array<string>)/g;
+      for (const m of src.matchAll(CAST_RE)) {
+        const key = m[1] || m[2];
+        const ft = lookupKinds.get(key);
+        if (!ft) continue;
+        const line = src.slice(0, m.index).split('\n').length;
+        const multi = ft.startsWith('multiple');
+        const helper = multi ? `fieldLookups(r, '${key}')` : `fieldLookup(r, '${key}')`;
+        errors.push(`${file}:${line}: \`fields.${key} as string${multi ? '[]' : ''}\` — '${key}' is a ${ft} field: the port delivers { key, label }${multi ? ' as an array' : ''} on both doors, and a string cast renders the object as a React child (React #31, live). Read it with ${helper} from '@/lib/journey', compare .key, show .label`);
+      }
+    }
+
+    // 3o. <WizardStep> children are the step list — the shell renders the
+    //     current one by position. Wrapping them in `{step === n && …}` leaves
+    //     the shell with ONE child from step 2 on, nodes[n-1] is undefined and
+    //     the visitor sees a heading without fields or "Weiter" (live, public
+    //     page, green through every gate). Either all <WizardStep> children
+    //     unconditionally, or `steps={…}` with plain `{step === n && <>…</>}`.
+    {
+      const COND_STEP_RE = /\{\s*(?:step|currentStep|activeStep)\s*===\s*(\d+)\s*&&[^<]{0,120}<WizardStep\b/g;
+      for (const m of src.matchAll(COND_STEP_RE)) {
+        const line = src.slice(0, m.index).split('\n').length;
+        errors.push(`${file}:${line}: <WizardStep> rendered conditionally (step === ${m[1]} && …) — the shell shows the current step itself and selects children by position; a conditional child leaves every later step empty (live: only the heading, no fields, no "Weiter"). Render all <WizardStep> children unconditionally, or drop WizardStep and keep the branches with a steps={…} prop`);
+      }
+    }
+    // 3p. A raw <input> has no styling in this scaffold — a live page's fields
+    //     were invisible (className="input" is not a Tailwind class). Bound
+    //     controls render through <Input> from '@/components/ui/input' (spread
+    //     f.field('key')) or through <Bound>.
+    {
+      const RAW_INPUT_RE = /<input\b(?![^>]*type=["']hidden["'])/g;
+      for (const m of src.matchAll(RAW_INPUT_RE)) {
+        const line = src.slice(0, m.index).split('\n').length;
+        errors.push(`${file}:${line}: raw <input> — unstyled in this scaffold (a live page's fields were invisible). Use <Input {...f.field('key')} /> from '@/components/ui/input' inside <Field>, or <Bound form={f} name="key" />`);
+      }
+    }
+
+    // 3q. `initial: { status: 'x' }` on a lookup field must name one of the
+    //     field's options — the one the owner asked for. Live pages set the
+    //     first option (`aktiv`, `angenommen`) where the prompt said
+    //     "Interessent" / "Anfrage".
+    if (appMeta) {
+      const SF_INIT_RE = /useStepForm\(\s*['"](\w+)['"]\s*,\s*\{[\s\S]*?\binitial\s*:\s*\{([^}]*)\}/g;
+      for (const m of src.matchAll(SF_INIT_RE)) {
+        const controls = appMeta.apps?.[m[1]]?.controls || {};
+        for (const kv of m[2].matchAll(/(\w+)\s*:\s*['"]([^'"]+)['"]/g)) {
+          const c = controls[kv[1]];
+          const options = c?.lookup_data && typeof c.lookup_data === 'object' ? Object.keys(c.lookup_data) : null;
+          if (options && !options.includes(kv[2])) {
+            const line = src.slice(0, m.index).split('\n').length;
+            errors.push(`${file}:${line}: initial ${m[1]}.${kv[1]} = '${kv[2]}' is not an option of that field — valid keys: ${options.join(', ')}. Take the option the owner named (match its label); if none matches, leave the initial value out — never the first option`);
+          }
         }
       }
     }
@@ -451,7 +573,15 @@ if (pages.length > 0) {
     //     rare aggregate the layer has no hook for — a warning names the layer's way.
     if (/useDashboardData\(/.test(src)) {
       const line = src.slice(0, src.search(/useDashboardData\(/)).split('\n').length;
-      warnings.push(`${file}:${line}: useDashboardData in a flow — picks are useRecordSearch (never items from an array), availability is useOccupancy(servicePort, entity, { resource }), the picked record is x.recordOf(id); keep the hook only for an aggregate the layer has no answer for`);
+      if (usesFlowHook) {
+        // With a hook there is no aggregate left to excuse it: the hook owns every
+        // pick — including the record an update flow changes (flow.pick('<entity>')).
+        // Live 23.09.2026: a lane fed the target of an update from the dashboard
+        // array because the hook offered no pick; the warning let it through.
+        errors.push(`${file}:${line}: useDashboardData next to the flow hook — the hook owns every pick: {...flow.picks.<field>.select} {...flow.pick('<field>')}, and for the record an update changes {...flow.picks.<entity>.select} {...flow.pick('<entity>')} (prefilled, updated on submit). Remove useDashboardData and the hand-built items`);
+      } else {
+        warnings.push(`${file}:${line}: useDashboardData in a flow — picks are useRecordSearch (never items from an array), availability is useOccupancy(servicePort, entity, { resource }) — with a flow hook useOccupancy(flow.port, …) —, the picked record is x.recordOf(id); keep the hook only for an aggregate the layer has no answer for`);
+      }
     }
 
     // 3z. A write past the port. Two live update flows called
@@ -468,7 +598,10 @@ if (pages.length > 0) {
     //     create path). The layer offers "Neu anlegen" by itself from
     //     {...x.select}; `create={false}` switches that off and is a
     //     deliberate decision — worth a second look, not a build failure.
-    for (const m of src.matchAll(/<EntitySelectStep\b[^>]*?\bcreate=\{\s*false\s*\}/gs)) {
+    //     On a hook page the plan decided (`picks.<k>.select.create`) — a lane
+    //     that writes `create=` there overrides it knowingly; no warning that
+    //     costs a rewrite round (two lanes, 30–45 s each, inclou 24.09.2026).
+    for (const m of usesFlowHook ? [] : src.matchAll(/<EntitySelectStep\b[^>]*?\bcreate=\{\s*false\s*\}/gs)) {
       const line = src.slice(0, m.index).split('\n').length;
       warnings.push(`${file}:${line}: <EntitySelectStep create={false}> — the step dead-ends when the list is empty; keep it off only where creating makes no sense (a fixed catalogue, a day), otherwise drop the prop and let the layer offer "Neu anlegen"`);
     }
@@ -500,6 +633,18 @@ if (pages.length > 0) {
         for (const m of src.matchAll(/<EntitySelectStep\b[\s\S]{0,400}?\bitems=\{\s*(\w+)\b/g)) {
           if (arrays.includes(m[1])) {
             errors.push(`${file}: <EntitySelectStep items={${m[1]}.…}> feeds a pick step from the useDashboardData array '${m[1]}' — the data path is a RUNTIME decision: const x = useRecordSearch(servicePort, '<entity>', { searchFields: [...], toItem }); <EntitySelectStep {...x.select} …/>; and drop the table from the hook: useDashboardData({ omit: ['<entity>'] })`);
+          }
+        }
+      }
+      // The same door, held differently: `const data = useDashboardData(…)` and
+      // `items={projektItems}` built from `data.projekte` (live 23.09.2026 —
+      // the destructuring pattern above never saw it).
+      const dd2 = /(?:const|let|var)\s+(\w+)\s*=\s*useDashboardData\s*\(/.exec(src);
+      if (dd2) {
+        for (const m of src.matchAll(/<EntitySelectStep\b[\s\S]{0,400}?\bitems=\{\s*(\w+)\b/g)) {
+          const def = new RegExp(`(?:const|let|var)\\s+${m[1]}\\s*=([\\s\\S]*?);\\n`).exec(src);
+          if (def && def[1].includes(`${dd2[1]}.`)) {
+            errors.push(`${file}: <EntitySelectStep items={${m[1]}}> is built from ${dd2[1]}.<entity> (useDashboardData) — the data path is a RUNTIME decision: pick through useRecordSearch ({...x.select}) or, with a flow hook, {...flow.picks.<field>.select} {...flow.pick('<field>')}`);
           }
         }
       }

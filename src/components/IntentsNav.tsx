@@ -1,11 +1,14 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { IconSettings } from '@tabler/icons-react';
+import { IconSettings, IconMap } from '@tabler/icons-react';
 import { INTENTS, INTENTS_PENDING, INTENTS_PENDING_SINCE, PENDING_MAX_MINUTES } from '@/config/intents';
 import { t, locale } from '@/i18n';
 import { usePageJobs } from '@/hooks/usePageJobs';
 import { NavRows, type NavRow } from '@/components/NavRows';
+import { getAppMapCached } from '@/lib/appMap';
+import { usePermissions } from '@/lib/permissions';
+import { FLOW_ENTITIES } from '@/config/plan';
 
 /**
  * IntentsNav — the sidebar list of the dashboard's flows ("Abläufe").
@@ -35,6 +38,9 @@ export function isPendingWindowOpen(pending: boolean, since: string | null, maxM
 }
 
 const MANAGE_PATH = '/verwaltung/ablaeufe';
+// The application map — what the built application does and what the owner
+// may change on the running application; a second gear row below "manage".
+const MAP_PATH = '/verwaltung/anwendung';
 
 function labelOf(label: string | { de?: string; en?: string; cs?: string }): string {
   // Multilingual labels pick the active locale; legacy plain strings render
@@ -51,8 +57,21 @@ export function IntentsNav() {
   const { jobs } = usePageJobs('flow', { idleMs: 60000 });
   const building = jobs.some(j => j.status === 'running' && !j.target);
 
+  const [hasMap, setHasMap] = useState<boolean | null>(null);
+  useEffect(() => {
+    let on = true;
+    getAppMapCached().then(s => { if (on) setHasMap(!!s.map); }).catch(() => { if (on) setHasMap(false); });
+    return () => { on = false; };
+  }, []);
+
+  // a flow writes its lists: without the right to write one of them it is not offered
+  const perms = usePermissions();
   const rows = useMemo<NavRow[]>(() => {
-    const items: NavRow[] = INTENTS.map(intent => {
+    const allowed = INTENTS.filter(intent => {
+      const ents = FLOW_ENTITIES[intent.path.replace(/\/+$/, '').split('/').pop() ?? ''];
+      return !ents || ents.every(e => perms.canWrite(e));
+    });
+    const items: NavRow[] = allowed.map(intent => {
       const Icon = intent.icon;
       return {
         key: intent.path,
@@ -72,8 +91,19 @@ export function IntentsNav() {
       icon: <IconSettings size={16} />,
       here: location.pathname === MANAGE_PATH,
     });
+    // „Deine Anwendung“ only when there is a map: a dashboard that was never
+    // orchestrated (legacy, or the update flow added the page) has nothing to show there
+    if (hasMap !== false) {
+      items.push({
+        key: 'map',
+        title: t('am_nav'),
+        url: `#${MAP_PATH}`,
+        icon: <IconMap size={16} />,
+        here: location.pathname === MAP_PATH,
+      });
+    }
     return items;
-  }, [location.pathname, pending, building]);
+  }, [location.pathname, pending, building, hasMap, perms]);
 
   const onSelect = (row: NavRow, e: MouseEvent<HTMLAnchorElement>) => {
     // Plain left click → SPA navigation; modifier clicks keep the href.

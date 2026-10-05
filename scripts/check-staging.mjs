@@ -4,6 +4,9 @@
 //   node scripts/check-staging.mjs .intents-staging/NeueBuchungPage.tsx
 //   node scripts/check-staging.mjs .public-staging/Zimmeranfrage.tsx   [--public]
 //
+// Four checks on a flow page: tsc, check-intents, check-vsql and — new — a
+// render-smoke walk of the staged page (bundle, mount, press through).
+//
 // In intents-pages mode the lanes may not run `tsc`, the gates or `npm run
 // build`: one tsbuildinfo, one dist/, and a tree Phase 1 is still writing.
 // So their first type check used to be the integration build — long after the
@@ -168,8 +171,26 @@ if (!isPublic) {
   if (v.status !== 0) problems.push('scripts/check-vsql.mjs red');
 }
 
+// ── 4. The page, rendered once and walked (flow pages) ───────────────────
+// Types and rules never LOOK at a page: five live flows were green through
+// every gate and dead-ended on step 1 (24.09.2026). render-smoke bundles the
+// staged file, mounts it under #/intents/<slug> against a mocked /rest door
+// and presses through to the success page — only where types are green
+// (a red tsc makes the bundle error a duplicate).
+// The walk needs the shadcn primitives the E2B template ships (src/components/ui);
+// a bare generator tree (a local test project) says so instead of failing.
+const hasPrimitives = existsSync(resolve('src/components/ui')) || Boolean(process.env.RENDER_SMOKE_ALIASES);
+if (!isPublic && problems.length === 0 && hasPrimitives) {
+  const sm = spawnSync('node', ['scripts/render-smoke.mjs', '--staged', rel], { encoding: 'utf8', env: process.env, timeout: 240000 });
+  if (sm.stdout) process.stdout.write(sm.stdout);
+  if (sm.stderr) process.stderr.write(sm.stderr);
+  if (sm.status !== 0) problems.push('scripts/render-smoke.mjs red');
+} else if (!isPublic && problems.length === 0) {
+  console.log('check-staging: rendered walk skipped (no src/components/ui in this tree)');
+}
+
 if (problems.length > 0) {
   console.error(`check-staging: ${problems.length} problem(s) in ${rel} — fix them and run this again`);
   process.exit(1);
 }
-console.log(`check-staging: OK (${rel} — types, page rules${isPublic ? '' : ' and server-checked filters'} green)`);
+console.log(`check-staging: OK (${rel} — types, page rules${isPublic ? '' : ', server-checked filters and a rendered walk'} green)`);

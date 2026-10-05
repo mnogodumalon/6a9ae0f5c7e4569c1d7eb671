@@ -7,6 +7,7 @@ import {
 import { t, appLabel, fieldLabel } from '@/i18n';
 import { MediaThumbnail } from '@/components/widgets/MediaViewer';
 import { SatelliteSection } from '@/components/SatelliteSection';
+import { usePermissions } from '@/lib/permissions';
 
 export interface TicketsDetailsProps {
   /** Der Record — enriched oder roh; alle Felder werden hier gerendert. */
@@ -32,7 +33,7 @@ export interface TicketsDetailsProps {
   /** Zeilen-Klick → overlay.push auf das Notizen-Detail (nie der Edit-Dialog). */
   onOpenNotizen: (record: Notizen) => void;
   /** Kontextuelles „+": öffnet den Notizen-Dialog mit diesem Record vorgesetzt. */
-  onAddNotizen: () => void;
+  onAddNotizen?: () => void;
 }
 
 export function TicketsDetails({
@@ -49,6 +50,8 @@ export function TicketsDetails({
   onOpenNotizen,
   onAddNotizen,
 }: TicketsDetailsProps) {
+  // attachments are a write to this record — read-only without the platform right
+  const perms = usePermissions();
   const assigned_agentTarget = mitarbeitendeList.find(r => r.record_id === extractRecordId(record.fields.assigned_agent));
   const teamTarget = teamsList.find(r => r.record_id === extractRecordId(record.fields.team));
   const parent_ticketTarget = ticketsList.find(r => r.record_id === extractRecordId(record.fields.parent_ticket));
@@ -118,7 +121,7 @@ export function TicketsDetails({
         getKey={r => r.record_id}
       />
 
-      <RecordAttachments appId={APP_IDS.TICKETS} recordId={record.record_id} />
+      <RecordAttachments appId={APP_IDS.TICKETS} recordId={record.record_id} readOnly={!perms.canWrite('tickets')} />
     </>
   );
 }

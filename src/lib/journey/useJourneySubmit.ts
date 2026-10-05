@@ -46,6 +46,20 @@ export interface PlanStep {
    *  written through the internal door's `update`; the public door throws.
    *  Static, or from the done steps (`ctx => ctx.done.pick.id`). */
   updates?: string | ((ctx: PlanContext) => string | undefined);
+  /** The record `updates` changes, as a review row ("Projekt · Alpha (Nr. 101)"):
+   *  SummaryStep shows it before the answers and the success page repeats it.
+   *  Without it the review listed the new status and the note but never WHICH
+   *  project was being changed (inclou, 24.09.2026). The flow hook fills it
+   *  from its target pick; a hand-written plan may leave it out. */
+  target?: () => SummaryItem | undefined;
+  /** The values this step sets itself (fixed by the plan or the owner's
+   *  policy) as review rows with the link that changes them — shown under
+   *  "Setzt der Ablauf", so nobody wonders where the status came from. */
+  settings?: () => SummaryItem[];
+  /** The planner's minor assumptions that first ACT in this flow (the invoice
+   *  number on the first invoice). The review shows each once — „Passt“ marks it
+   *  seen on the plan, „ändern“ leads to its line on „Deine Anwendung“. */
+  notices?: () => { id: string; question: string; assumed: string }[];
   /** The record this journey is about — reference and facts come from it (default: first step). */
   primary?: boolean;
   /** What the step does to its record — drives the words in the plan list and the

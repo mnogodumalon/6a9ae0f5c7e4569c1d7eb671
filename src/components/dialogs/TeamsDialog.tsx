@@ -106,6 +106,8 @@ export function TeamsDialog({ open, onClose, onSubmit, defaultValues, recordId, 
     setCreateMitarbeitendeInitial(q);
     setCreateMitarbeitendeOpen(true);
   }
+  // Fields the plan assigns to a tool (empty without a plan).
+  const SYSTEM_ASSIGNED: string[] = [];
   const [showErrors, setShowErrors] = useState(false);
   const REQUIRED_FIELDS = ['name'] as const;
   const missingRequired = REQUIRED_FIELDS.filter(k => {
@@ -336,7 +338,7 @@ export function TeamsDialog({ open, onClose, onSubmit, defaultValues, recordId, 
         <Label htmlFor="lead">{fieldLabel('teams', 'lead')}</Label>
         <Combobox
           id="lead"
-          placeholder="Teamleitung wählen"
+          placeholder=""
           items={mitarbeitendeListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.first_name ?? r.record_id),
@@ -353,7 +355,7 @@ export function TeamsDialog({ open, onClose, onSubmit, defaultValues, recordId, 
         <Label htmlFor="name">{fieldLabel('teams', 'name')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="name"
-          placeholder="z. B. Support-Team"
+          placeholder=""
           value={fields.name ?? ''}
           onChange={e => setFields(f => ({ ...f, name: e.target.value }))}
           required
@@ -368,7 +370,7 @@ export function TeamsDialog({ open, onClose, onSubmit, defaultValues, recordId, 
         <Label htmlFor="cost_center">{fieldLabel('teams', 'cost_center')}</Label>
         <Input
           id="cost_center"
-          placeholder="z. B. CC-500"
+          placeholder=""
           value={fields.cost_center ?? ''}
           onChange={e => setFields(f => ({ ...f, cost_center: e.target.value }))}
         />
@@ -648,9 +650,25 @@ export function TeamsDialog({ open, onClose, onSubmit, defaultValues, recordId, 
               const renderField = (k: string) => {
                 const inlineHints = computedLayout.anchors[k] ?? [];
                 const refs = applookupRefs[k] ?? [];
+                // A field the plan gives to a TOOL. On CREATE it is not shown
+                // at all — the value does not exist yet and typing one only
+                // gets overwritten. On EDIT it stays a normal input with a
+                // note: when a tool could not compose its value (a missing
+                // ingredient), this is the only place to repair the record.
+                if (SYSTEM_ASSIGNED.includes(k) && !recordId) {
+                  return (
+                    <div key={k} className="space-y-1.5 min-w-0">
+                      <Label>{fieldLabel('teams', k)}</Label>
+                      <p className="text-sm text-muted-foreground">{t('assigned_by_system')}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div key={k} className="space-y-1.5 min-w-0">
                     {fieldBlocks[k]}
+                    {SYSTEM_ASSIGNED.includes(k) && (
+                      <p className="text-xs text-muted-foreground">{t('assigned_by_system')}</p>
+                    )}
                     {refs.map(({ lookupKey }) => {
                       // Show the live numeric value the formula will pull from
                       // the selected lookup target (e.g. "Monatspreis: 34,90 €"

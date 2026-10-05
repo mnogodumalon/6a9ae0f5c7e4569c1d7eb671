@@ -2,6 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useRef, type ReactNo
 import { toast, Toaster } from 'sonner';
 import { t } from '@/i18n';
 
+
+/** Window `error` events that are notices, not failures — never a toast. */
+const BENIGN_BROWSER_NOTICES: RegExp[] = [/ResizeObserver loop/];
+
 const APPGROUP_ID = '6a9ae0f5c7e4569c1d7eb671';
 const REPAIR_ENDPOINT = '/claude/build/repair';
 const DEDUP_WINDOW_MS = 5000;
@@ -21,7 +25,7 @@ const BUG_TYPES = new Set<string>([
 ]);
 
 type ErrorSource = 'api' | 'promise' | 'js' | 'network';
-type ErrorCategory = 'user' | 'bug' | 'transient' | 'auth';
+type ErrorCategory = 'user' | 'bug' | 'transient' | 'auth' | 'forbidden';
 
 export interface ErrorPayload {
   source: ErrorSource;
@@ -36,9 +40,11 @@ export interface ErrorPayload {
 }
 
 function classify(err: ErrorPayload): ErrorCategory {
-  // 401/403: the Layout login screen is the surface for this — a repair run
-  // cannot fix a missing session or missing permissions.
-  if (err.status === 401 || err.status === 403) return 'auth';
+  // 401: the Layout login screen is the surface for this — a repair run
+  // cannot fix a missing session. 403: signed in, but without the right for
+  // this list — a plain notice, never a repair offer (05.10.2026).
+  if (err.status === 401) return 'auth';
+  if (err.status === 403) return 'forbidden';
   if (err.source === 'network') return 'transient';
   if (typeof err.status === 'number' && err.status >= 500) return 'transient';
   if (err.type && USER_TYPES.has(err.type)) return 'user';
@@ -147,6 +153,10 @@ export function ErrorBusProvider({ children }: { children: ReactNode }) {
 
     const category = classify(err);
     if (category === 'user' || category === 'auth') return;
+    if (category === 'forbidden') {
+      toast.error(t('perm_denied_title'), { description: t('perm_denied_desc'), duration: TOAST_DURATION_MS });
+      return;
+    }
 
     if (category === 'transient') {
       const isServerError = typeof err.status === 'number' && err.status >= 500;
@@ -201,6 +211,18 @@ export function ErrorBusProvider({ children }: { children: ReactNode }) {
       });
     };
     const onError = (e: ErrorEvent) => {
+      // Browsers report a ResizeObserver callback that changed layout again
+      // in the same frame as a window `error` event — „ResizeObserver loop
+      // completed with undelivered notifications“ (Chrome, Safari) or „… loop
+      // limit exceeded“ (Firefox). It is a notice, not a failure: the
+      // observer simply delivers in the next frame, nothing is lost. Below
+      // 800 px the sidebar collapse and the measured stat cards trigger it,
+      // and every owner saw „Etwas ist schiefgelaufen · Dashboard reparieren“
+      // for it (issue 30.09.2026). The console keeps the trace for developers.
+      if (BENIGN_BROWSER_NOTICES.some(re => re.test(e.message ?? ''))) {
+        console.warn('[ErrorBus] benign browser notice, not shown:', e.message);
+        return;
+      }
       emit({
         source: 'js',
         message: e.message,

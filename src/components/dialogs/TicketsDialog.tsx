@@ -175,6 +175,8 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
     setCreateAssetsInitial(q);
     setCreateAssetsOpen(true);
   }
+  // Fields the plan assigns to a tool (empty without a plan).
+  const SYSTEM_ASSIGNED: string[] = [];
   const [showErrors, setShowErrors] = useState(false);
   const REQUIRED_FIELDS = ['title', 'priority', 'status', 'reporter_name', 'reporter_email', 'due', 'opened_on', 'estimated_hours'] as const;
   const missingRequired = REQUIRED_FIELDS.filter(k => {
@@ -436,7 +438,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="assigned_agent">{fieldLabel('tickets', 'assigned_agent')}</Label>
         <Combobox
           id="assigned_agent"
-          placeholder="Wem zuweisen?"
+          placeholder=""
           items={mitarbeitendeListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.first_name ?? r.record_id),
@@ -453,7 +455,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="team">{fieldLabel('tickets', 'team')}</Label>
         <Combobox
           id="team"
-          placeholder="Welches Team kümmert sich?"
+          placeholder=""
           items={teamsListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.name ?? r.record_id),
@@ -470,7 +472,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="parent_ticket">{fieldLabel('tickets', 'parent_ticket')}</Label>
         <Combobox
           id="parent_ticket"
-          placeholder="Übergeordnetes Ticket wählen"
+          placeholder=""
           items={ticketsList.map(r => ({
             id: r.record_id,
             label: String(r.fields.title ?? r.record_id),
@@ -485,7 +487,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="title">{fieldLabel('tickets', 'title')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="title"
-          placeholder="z. B. E-Mail funktioniert nicht"
+          placeholder=""
           value={fields.title ?? ''}
           onChange={e => setFields(f => ({ ...f, title: e.target.value }))}
           required
@@ -500,7 +502,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="description">{fieldLabel('tickets', 'description')}</Label>
         <Textarea
           id="description"
-          placeholder="Problem, Fehlertext, Schritte zum Reproduzieren..."
+          placeholder=""
           value={fields.description ?? ''}
           onChange={e => setFields(f => ({ ...f, description: e.target.value }))}
           rows={3}
@@ -651,7 +653,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
           value={lookupKey(fields.category) ?? ''}
           onValueChange={v => setFields(f => ({ ...f, category: v === 'none' ? undefined : v as any }))}
         >
-          <SelectTrigger id="category" className="max-sm:h-11"><SelectValue placeholder="z. B. Hardware, Software" /></SelectTrigger>
+          <SelectTrigger id="category" className="max-sm:h-11"><SelectValue placeholder="" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">—</SelectItem>
             <SelectItem value="hardware">{lookupLabel('tickets', 'category', 'hardware') ?? 'Hardware'}</SelectItem>
@@ -670,7 +672,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="reporter_name">{fieldLabel('tickets', 'reporter_name')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="reporter_name"
-          placeholder="z. B. Max Schmidt"
+          placeholder=""
           value={fields.reporter_name ?? ''}
           onChange={e => setFields(f => ({ ...f, reporter_name: e.target.value }))}
           required
@@ -687,7 +689,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
           id="reporter_email"
           type="email"
           inputMode="email"
-          placeholder="z. B. max@firma.de"
+          placeholder=""
           value={fields.reporter_email ?? ''}
           onChange={e => setFields(f => ({ ...f, reporter_email: e.target.value }))}
           required
@@ -704,7 +706,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
           id="reporter_phone"
           type="tel"
           inputMode="tel"
-          placeholder="z. B. +49 30 98765"
+          placeholder=""
           value={fields.reporter_phone ?? ''}
           onChange={e => setFields(f => ({ ...f, reporter_phone: e.target.value }))}
         />
@@ -715,7 +717,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="due">{fieldLabel('tickets', 'due')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <DatePicker
           id="due"
-          placeholder="Bis wann sollte es gelöst sein?"
+          placeholder=""
           mode="datetime"
           value={fields.due ?? null}
           onChange={v => setFields(f => ({ ...f, due: v ?? undefined }))}
@@ -731,7 +733,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="opened_on">{fieldLabel('tickets', 'opened_on')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <DatePicker
           id="opened_on"
-          placeholder="Wann wurde gemeldet?"
+          placeholder=""
           mode="date"
           value={fields.opened_on ?? null}
           onChange={v => setFields(f => ({ ...f, opened_on: v ?? undefined }))}
@@ -810,7 +812,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="affected_asset">{fieldLabel('tickets', 'affected_asset')}</Label>
         <Combobox
           id="affected_asset"
-          placeholder="Welches Asset betroffen?"
+          placeholder=""
           items={assetsListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.name ?? r.record_id),
@@ -829,7 +831,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
           id="vendor_link"
           type="url"
           inputMode="url"
-          placeholder="z. B. https://support.vendor.com/ticket/123"
+          placeholder=""
           value={fields.vendor_link ?? ''}
           onChange={e => setFields(f => ({ ...f, vendor_link: e.target.value }))}
         />
@@ -844,7 +846,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'estimated_hours')}
-          placeholder="z. B. 4"
+          placeholder=""
           value={fields.estimated_hours !== undefined ? fields.estimated_hours : (computedValues['estimated_hours'] ?? '')}
           onChange={e => setFields(f => ({ ...f, estimated_hours: clampNumberValue(formEnhancements, 'estimated_hours', e.target.value) }))}
         />
@@ -871,7 +873,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="resolution">{fieldLabel('tickets', 'resolution')}</Label>
         <Textarea
           id="resolution"
-          placeholder="Wie wurde das Problem gelöst?"
+          placeholder=""
           value={fields.resolution ?? ''}
           onChange={e => setFields(f => ({ ...f, resolution: e.target.value }))}
           rows={3}
@@ -1038,7 +1040,7 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="internal_note">{fieldLabel('tickets', 'internal_note')}</Label>
         <Textarea
           id="internal_note"
-          placeholder="Für Kolleg/innen: Kontext, Lösungsansätze..."
+          placeholder=""
           value={fields.internal_note ?? ''}
           onChange={e => setFields(f => ({ ...f, internal_note: e.target.value }))}
           rows={3}
@@ -1319,9 +1321,25 @@ export function TicketsDialog({ open, onClose, onSubmit, defaultValues, recordId
               const renderField = (k: string) => {
                 const inlineHints = computedLayout.anchors[k] ?? [];
                 const refs = applookupRefs[k] ?? [];
+                // A field the plan gives to a TOOL. On CREATE it is not shown
+                // at all — the value does not exist yet and typing one only
+                // gets overwritten. On EDIT it stays a normal input with a
+                // note: when a tool could not compose its value (a missing
+                // ingredient), this is the only place to repair the record.
+                if (SYSTEM_ASSIGNED.includes(k) && !recordId) {
+                  return (
+                    <div key={k} className="space-y-1.5 min-w-0">
+                      <Label>{fieldLabel('tickets', k)}</Label>
+                      <p className="text-sm text-muted-foreground">{t('assigned_by_system')}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div key={k} className="space-y-1.5 min-w-0">
                     {fieldBlocks[k]}
+                    {SYSTEM_ASSIGNED.includes(k) && (
+                      <p className="text-xs text-muted-foreground">{t('assigned_by_system')}</p>
+                    )}
                     {refs.map(({ lookupKey }) => {
                       // Show the live numeric value the formula will pull from
                       // the selected lookup target (e.g. "Monatspreis: 34,90 €"

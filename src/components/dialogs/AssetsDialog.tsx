@@ -69,6 +69,8 @@ export function AssetsDialog({ open, onClose, onSubmit, defaultValues, recordId,
       return true;
     }
   }, [fields, normalizedDefaults]);
+  // Fields the plan assigns to a tool (empty without a plan).
+  const SYSTEM_ASSIGNED: string[] = [];
   const [showErrors, setShowErrors] = useState(false);
   const REQUIRED_FIELDS = ['name', 'serial_number'] as const;
   const missingRequired = REQUIRED_FIELDS.filter(k => {
@@ -324,7 +326,7 @@ export function AssetsDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="name">{fieldLabel('assets', 'name')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="name"
-          placeholder="z. B. MacBook Pro 16"
+          placeholder=""
           value={fields.name ?? ''}
           onChange={e => setFields(f => ({ ...f, name: e.target.value }))}
           required
@@ -339,7 +341,7 @@ export function AssetsDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="serial_number">{fieldLabel('assets', 'serial_number')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="serial_number"
-          placeholder="z. B. C01234567"
+          placeholder=""
           value={fields.serial_number ?? ''}
           onChange={e => setFields(f => ({ ...f, serial_number: e.target.value }))}
           required
@@ -412,7 +414,7 @@ export function AssetsDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="purchased_on">{fieldLabel('assets', 'purchased_on')}</Label>
         <DatePicker
           id="purchased_on"
-          placeholder="Wann wurde das Asset gekauft?"
+          placeholder=""
           mode="date"
           value={fields.purchased_on ?? null}
           onChange={v => setFields(f => ({ ...f, purchased_on: v ?? undefined }))}
@@ -424,7 +426,7 @@ export function AssetsDialog({ open, onClose, onSubmit, defaultValues, recordId,
         <Label htmlFor="warranty_until">{fieldLabel('assets', 'warranty_until')}</Label>
         <DatePicker
           id="warranty_until"
-          placeholder="Wann endet die Garantie?"
+          placeholder=""
           mode="date"
           value={fields.warranty_until ?? null}
           onChange={v => setFields(f => ({ ...f, warranty_until: v ?? undefined }))}
@@ -705,9 +707,25 @@ export function AssetsDialog({ open, onClose, onSubmit, defaultValues, recordId,
               const renderField = (k: string) => {
                 const inlineHints = computedLayout.anchors[k] ?? [];
                 const refs = applookupRefs[k] ?? [];
+                // A field the plan gives to a TOOL. On CREATE it is not shown
+                // at all — the value does not exist yet and typing one only
+                // gets overwritten. On EDIT it stays a normal input with a
+                // note: when a tool could not compose its value (a missing
+                // ingredient), this is the only place to repair the record.
+                if (SYSTEM_ASSIGNED.includes(k) && !recordId) {
+                  return (
+                    <div key={k} className="space-y-1.5 min-w-0">
+                      <Label>{fieldLabel('assets', k)}</Label>
+                      <p className="text-sm text-muted-foreground">{t('assigned_by_system')}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div key={k} className="space-y-1.5 min-w-0">
                     {fieldBlocks[k]}
+                    {SYSTEM_ASSIGNED.includes(k) && (
+                      <p className="text-xs text-muted-foreground">{t('assigned_by_system')}</p>
+                    )}
                     {refs.map(({ lookupKey }) => {
                       // Show the live numeric value the formula will pull from
                       // the selected lookup target (e.g. "Monatspreis: 34,90 €"

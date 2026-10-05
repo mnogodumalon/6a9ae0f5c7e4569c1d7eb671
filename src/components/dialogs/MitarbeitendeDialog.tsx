@@ -106,6 +106,8 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
     setCreateTeamsInitial(q);
     setCreateTeamsOpen(true);
   }
+  // Fields the plan assigns to a tool (empty without a plan).
+  const SYSTEM_ASSIGNED: string[] = [];
   const [showErrors, setShowErrors] = useState(false);
   const REQUIRED_FIELDS = ['first_name', 'last_name', 'email'] as const;
   const missingRequired = REQUIRED_FIELDS.filter(k => {
@@ -336,7 +338,7 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
         <Label htmlFor="first_name">{fieldLabel('mitarbeitende', 'first_name')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="first_name"
-          placeholder="z. B. Anna"
+          placeholder=""
           value={fields.first_name ?? ''}
           onChange={e => setFields(f => ({ ...f, first_name: e.target.value }))}
           required
@@ -351,7 +353,7 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
         <Label htmlFor="last_name">{fieldLabel('mitarbeitende', 'last_name')} <span className="text-destructive" aria-hidden="true">*</span></Label>
         <Input
           id="last_name"
-          placeholder="z. B. Müller"
+          placeholder=""
           value={fields.last_name ?? ''}
           onChange={e => setFields(f => ({ ...f, last_name: e.target.value }))}
           required
@@ -368,7 +370,7 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
           id="email"
           type="email"
           inputMode="email"
-          placeholder="z. B. anna.mueller@beispiel.de"
+          placeholder=""
           value={fields.email ?? ''}
           onChange={e => setFields(f => ({ ...f, email: e.target.value }))}
           required
@@ -385,7 +387,7 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
           id="phone"
           type="tel"
           inputMode="tel"
-          placeholder="z. B. +49 30 123456"
+          placeholder=""
           value={fields.phone ?? ''}
           onChange={e => setFields(f => ({ ...f, phone: e.target.value }))}
         />
@@ -413,7 +415,7 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
           inputMode="decimal"
           step="any"
           {...numberInputProps(formEnhancements, 'working_hours_per_week')}
-          placeholder="z. B. 40"
+          placeholder=""
           value={fields.working_hours_per_week !== undefined ? fields.working_hours_per_week : (computedValues['working_hours_per_week'] ?? '')}
           onChange={e => setFields(f => ({ ...f, working_hours_per_week: clampNumberValue(formEnhancements, 'working_hours_per_week', e.target.value) }))}
         />
@@ -424,7 +426,7 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
         <Label htmlFor="team">{fieldLabel('mitarbeitende', 'team')}</Label>
         <Combobox
           id="team"
-          placeholder="Welchem Team gehört die Person an?"
+          placeholder=""
           items={teamsListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.name ?? r.record_id),
@@ -710,9 +712,25 @@ export function MitarbeitendeDialog({ open, onClose, onSubmit, defaultValues, re
               const renderField = (k: string) => {
                 const inlineHints = computedLayout.anchors[k] ?? [];
                 const refs = applookupRefs[k] ?? [];
+                // A field the plan gives to a TOOL. On CREATE it is not shown
+                // at all — the value does not exist yet and typing one only
+                // gets overwritten. On EDIT it stays a normal input with a
+                // note: when a tool could not compose its value (a missing
+                // ingredient), this is the only place to repair the record.
+                if (SYSTEM_ASSIGNED.includes(k) && !recordId) {
+                  return (
+                    <div key={k} className="space-y-1.5 min-w-0">
+                      <Label>{fieldLabel('mitarbeitende', k)}</Label>
+                      <p className="text-sm text-muted-foreground">{t('assigned_by_system')}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div key={k} className="space-y-1.5 min-w-0">
                     {fieldBlocks[k]}
+                    {SYSTEM_ASSIGNED.includes(k) && (
+                      <p className="text-xs text-muted-foreground">{t('assigned_by_system')}</p>
+                    )}
                     {refs.map(({ lookupKey }) => {
                       // Show the live numeric value the formula will pull from
                       // the selected lookup target (e.g. "Monatspreis: 34,90 €"

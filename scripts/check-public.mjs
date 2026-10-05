@@ -57,6 +57,15 @@ try {
 } catch {
   // metadata missing (e.g. local runs) — type checks are skipped
 }
+// The owner's words for this page job (.page_request, written by the page
+// job, removed by the deploy). Lets 3q judge a lookup preset against what
+// the owner asked for; absent in local runs → that part is skipped.
+let pageRequest = null;
+try {
+  pageRequest = readFileSync('.page_request', 'utf8').toLowerCase();
+} catch {
+  // no request on disk
+}
 
 // ── 1. Import allowlist over agent-written pages ─────────────────────────
 const IMPORT_RE = /^\s*import\s[^;]*?from\s+['"]([^'"]+)['"]/gm;
@@ -76,6 +85,19 @@ const pageFiles = pageOnly
     : [];
 for (const file of pageFiles) {
   const src = readFileSync(file, 'utf8');
+
+  // fieldText is the DISPLAY text („12.10.2026, 11:00“); new Date()/parseISO
+  // read it month-first — salon 05.10.2026 showed Monday 12 Oct as
+  // „Donnerstag, 10.12.2026“. Anything computed or formatted from a date
+  // reads fieldDate (ISO).
+  {
+    const textVars = [...src.matchAll(/(?:const|let)\s+(\w+)\s*=\s*fieldText\(/g)].map(m => m[1]);
+    const direct = /(?:new Date|parseISO)\(\s*fieldText\(/.test(src);
+    const viaVar = textVars.some(v => new RegExp(`(?:new Date|parseISO)\\(\\s*${v}\\b`).test(src));
+    if (direct || viaVar) {
+      errors.push(`${file}: a fieldText(...) value goes into new Date()/parseISO — fieldText is the DISPLAY text ('12.10.2026, 11:00'), which Date reads month-first (12 Oct became 10 Dec, live). Use fieldDate(r, key) — the ISO value — for anything computed or formatted from a date`);
+    }
+  }
   // A record reference written for the authenticated REST API is rejected by
   // the anonymous surface with 400 "Unsupported field value" — applookup
   // values must be grant-scoped. Live-proven twice: a course registration
@@ -110,18 +132,46 @@ for (const file of pageFiles) {
     errors.push(`${file}:${line}: defaultValue on an input — initial values belong to the form: useStepForm(entity, { initial: { key: value } }) (dates: todayIso() from '@/lib/journey'); an uncontrolled default is never submitted and fails validation`);
   }
 
+  // 3u. A hand-rolled stepper. A page that keeps its own step state and moves
+  //     between steps with its own buttons passes tsc and every gate here, but
+  //     nothing the layer provides works for it: no URL step, no draft resume,
+  //     no "needs" back-link, no focus management — and the render-smoke has
+  //     no "Weiter" to press, so the walk stops at step 1 (live: a five-step
+  //     membership form rebuilt the stepper in 480 lines). The shell IS the
+  //     stepper: IntentWizardShell + StepNav, the page only owns `step`.
+  {
+    const ownsSteps = /\bsetStep\s*\(|\[\s*step\s*,\s*setStep\s*\]|useState\(\s*STEP_/.test(src);
+    const onTheLayer = /<SummaryStep\b|useJourneySubmit\(/.test(src);
+    if (ownsSteps && onTheLayer && !/IntentWizardShell/.test(src)) {
+      errors.push(`${file}: a hand-rolled stepper (own step state and buttons) without IntentWizardShell — wrap the steps in <IntentWizardShell steps={STEPS} currentStep={step} onStepChange={setStep} forms={[…]}> and move between them with <StepNav onNext={…} /> (both under @/components/blocks); the shell owns URL step, draft resume, focus and the buttons the render-smoke presses`);
+    }
+  }
+
   // 3h. Every bound control sits under a label. The bindings carry id, value,
   //     aria-* — not the label; a step with five bare inputs shipped (live).
-  //     <Field form={f} name="key"> renders label, hint and error from the
-  //     entity's rules; a hand-written <Label htmlFor={f.fieldId('key')}> also counts.
+  //     <Bound form={f} name="key"> IS a labelled control; <Field form={f}
+  //     name="key"> renders label, hint and error around a control the page
+  //     places itself; a hand-written <Label htmlFor={f.fieldId('key')}> also
+  //     counts. Same rule as check-intents — the public variant once accepted
+  //     only <Field>, and pages wrapped every <Bound> in one: two labels each.
   {
     const bound = new Set();
-    for (const m of src.matchAll(/\.(?:field|number|date|choice|checkbox|record)\(\s*['"]([\w]+)['"]/g)) bound.add(m[1]);
+    for (const m of src.matchAll(/\.(?:field|number|date|choice|checkbox|record|records)\(\s*['"]([\w]+)['"]/g)) bound.add(m[1]);
     for (const key of bound) {
-      const wrapped = new RegExp(`<Field\\b[^>]*\\bname=["']${key}["']`).test(src);
+      const wrapped = new RegExp(`<(?:Field|Bound)\\b[^>]*\\bname=["']${key}["']`).test(src);
       const labelled = new RegExp(`htmlFor=\\{[^}]*fieldId\\(\\s*['"]${key}['"]`).test(src);
       if (!wrapped && !labelled) {
-        errors.push(`${file}: the control bound with f.…('${key}') has no label — wrap it: <Field form={f} name="${key}">…</Field> (label from the entity's rules, error and hint included; from '@/components/blocks/Field')`);
+        errors.push(`${file}: the control bound with f.…('${key}') has no label — use <Bound form={f} name="${key}" /> (label, control, hint and error in one; from '@/components/blocks/Bound') or wrap your own control: <Field form={f} name="${key}">…</Field>`);
+      }
+    }
+    // A <Field> whose only child is a <Bound> of the same key is redundant —
+    // the layer renders one label either way (Bound sees the enclosing Field).
+    for (const m of src.matchAll(/<Field\b([^>]*)>\s*<Bound\b([^>]*)\/>\s*<\/Field>/g)) {
+      const outer = (/\bname=["'](\w+)["']/.exec(m[1]) || [])[1];
+      const inner = (/\bname=["'](\w+)["']/.exec(m[2]) || [])[1];
+      if (outer && outer === inner) {
+        const line = src.slice(0, m.index).split('\n').length;
+        warnings.push(`${file}:${line}: <Field name="${outer}"> around <Bound name="${outer}"> — Bound already renders label, hint and error; drop the Field (keep its label= or hint= on the Bound)`);
       }
     }
   }
@@ -167,6 +217,55 @@ for (const file of pageFiles) {
           errors.push(`${file}: useRecordSearch('${entity}') searchFields '${f}' is ${ft} — only string fields are searchable (text, email, tel, textarea)`);
         }
       }
+    }
+  }
+
+  // 3n. Lookup values are `{ key, label }` on BOTH doors (the public port
+  //     hydrates the grant's bare keys), a multiplelookup an ARRAY of them. A
+  //     live landing page cast `ausstattung as string[]` and handed React the
+  //     objects as children — React #31 for every visitor, green through tsc.
+  if (appMeta) {
+    const lookupKinds = new Map();
+    for (const app of Object.values(appMeta.apps || {})) {
+      for (const [k, c] of Object.entries(app?.controls || {})) {
+        const ft = c?.fulltype || '';
+        if (ft.startsWith('lookup') || ft.startsWith('multiplelookup')) lookupKinds.set(k, ft);
+      }
+    }
+    const CAST_RE = /\.fields(?:\.(\w+)|\[['"](\w+)['"]\])\s+as\s+(?:string(?:\s*\[\s*\])?|Array<string>)/g;
+    for (const m of src.matchAll(CAST_RE)) {
+      const key = m[1] || m[2];
+      const ft = lookupKinds.get(key);
+      if (!ft) continue;
+      const line = src.slice(0, m.index).split('\n').length;
+      const multi = ft.startsWith('multiple');
+      const helper = multi ? `fieldLookups(r, '${key}')` : `fieldLookup(r, '${key}')`;
+      errors.push(`${file}:${line}: \`fields.${key} as string${multi ? '[]' : ''}\` — '${key}' is a ${ft} field: the port delivers { key, label }${multi ? ' as an array' : ''} on both doors, and a string cast renders the object as a React child (React #31, live). Read it with ${helper} from '@/lib/journey', compare .key, show .label`);
+    }
+  }
+
+  // 3o. <WizardStep> children are the step list — the shell renders the
+  //     current one by position. Wrapping them in `{step === n && …}` leaves
+  //     the shell with ONE child from step 2 on, nodes[n-1] is undefined and
+  //     the visitor sees a heading without fields or "Weiter" (live, public
+  //     page, green through every gate). Either all <WizardStep> children
+  //     unconditionally, or `steps={…}` with plain `{step === n && <>…</>}`.
+  {
+    const COND_STEP_RE = /\{\s*(?:step|currentStep|activeStep)\s*===\s*(\d+)\s*&&[^<]{0,120}<WizardStep\b/g;
+    for (const m of src.matchAll(COND_STEP_RE)) {
+      const line = src.slice(0, m.index).split('\n').length;
+      errors.push(`${file}:${line}: <WizardStep> rendered conditionally (step === ${m[1]} && …) — the shell shows the current step itself and selects children by position; a conditional child leaves every later step empty (live: only the heading, no fields, no "Weiter"). Render all <WizardStep> children unconditionally, or drop WizardStep and keep the branches with a steps={…} prop`);
+    }
+  }
+  // 3p. A raw <input> has no styling in this scaffold — a live page's fields
+  //     were invisible (className="input" is not a Tailwind class). Bound
+  //     controls render through <Input> from '@/components/ui/input' (spread
+  //     f.field('key')) or through <Bound>.
+  {
+    const RAW_INPUT_RE = /<input\b(?![^>]*type=["']hidden["'])/g;
+    for (const m of src.matchAll(RAW_INPUT_RE)) {
+      const line = src.slice(0, m.index).split('\n').length;
+      errors.push(`${file}:${line}: raw <input> — unstyled in this scaffold (a live page's fields were invisible). Use <Input {...f.field('key')} /> from '@/components/ui/input' inside <Field>, or <Bound form={f} name="key" />`);
     }
   }
 
@@ -324,8 +423,119 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
     if (/\b(true|false)\b/.test(ep.scope)) {
       errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' scope uses lowercase true/false — vSQL booleans are Python-style True/False (e.g. r.v_aktiv == True)`);
     }
-    if (/\btoday\b/.test(ep.scope)) {
-      errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' scope uses 'today' — vSQL has no today, the current time is now()`);
+    if (/\btoday\b(?!\s*\()/.test(ep.scope)) {
+      errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' scope uses a bare 'today' — a DATE field compares with today() (or @(YYYY-MM-DD)), a DATETIME field with now()`);
+    }
+  }
+  // 3q. A preset/default VALUE must be one the OWNER asked for. A lookup
+  //     value must be one of the field's options, and the option the owner
+  //     named; any preset the request never mentions is a value nobody
+  //     ordered, written into every record the page creates (live: status
+  //     'angenommen', kundentyp 'privat', mitgliedsnummer 'AUSSTEHEND',
+  //     eintrittsdatum '__today__' — three of them against the owner's words).
+  if (ep.op === 'create' && appMeta) {
+    const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    const lc = (x) => String(x ?? '').toLowerCase().trim();
+    for (const [bag, obj] of [['preset_fields', ep.preset_fields], ['default_fields', ep.default_fields]]) {
+      for (const [key, val] of Object.entries(obj || {})) {
+        const c = controls[key];
+        if (!c) continue;
+        const options = c.lookup_data && typeof c.lookup_data === 'object' ? Object.keys(c.lookup_data) : null;
+        if (options && typeof val === 'string' && !options.includes(val)) {
+          errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', which is not an option of that field — valid keys: ${options.join(', ')}. Take the option the owner named (match its label); if none matches, leave the preset OUT and say so in your summary — never the first option`);
+          continue;
+        }
+        if (!pageRequest) continue;  // no owner text to judge against (initial build)
+        const fieldWords = [key, c.label].map(lc).filter(w => w.length >= 3);
+        const optionWords = options ? Object.entries(c.lookup_data).flatMap(([k, l]) => [lc(k), lc(l)]).filter(w => w.length >= 3) : [];
+        const mentionsField = fieldWords.some(w => pageRequest.includes(w));
+        const mentionsOption = optionWords.some(w => pageRequest.includes(w));
+        if (options && mentionsField && !mentionsOption) {
+          errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${val}', but the owner's request names '${c.label || key}' with a value this field does not offer (options: ${options.join(', ')}). Do not substitute: leave '${key}' out of ${bag} and say in your summary that the requested value does not exist`);
+        } else if (!mentionsField) {
+          // An option word elsewhere in the text is no order (live: "Beitrag für
+          // Erwachsene und Kinder" turned into beitragsklasse = 'erwachsener' for
+          // every new member) — the owner has to name the FIELD.
+          errors.push(`${where}: page '${slug}' ${bag} sets ${ep.entity}.${key} = '${JSON.stringify(val)}' although the owner never asked for '${c.label || key}' — a value nobody ordered lands in every record this page writes. Leave '${key}' out of ${bag}; if the record cannot do without it, ask the visitor (a field on the page) and name the choice in your summary`);
+        }
+      }
+    }
+  }
+  // 3w. Identifiers are never assigned by a public page. A visitor-facing
+  //     page that computes an order or booking number (`AU-${date}-${rand}`,
+  //     generateNummer()), presets a placeholder ('AUSSTEHEND') or lets the
+  //     visitor type the number produces duplicates and editable ids (live:
+  //     three pages, one of them `ANF-<day>` for every request of a day).
+  //     Numbers come from the platform or a tool after the record exists.
+  if (ep.op === 'create') {
+    const ID_KEY = /(nummer|number|_nr)$/i;
+    const NOT_ID = /(telefon|phone|mobil|handy|fax|haus|steuer|ust|iban|bic|konto|sozial|versicher|rente|pass|ausweis|zimmer|raum|platz|tisch|seiten|artikel|teile|serien|fahrgestell|chassis|vin)/i;
+    const bags = [['fields', ep.fields || []], ['preset_fields', Object.keys(ep.preset_fields || {})], ['default_fields', Object.keys(ep.default_fields || {})]];
+    for (const [bag, keys] of bags) {
+      for (const key of keys) {
+        if (!ID_KEY.test(key) || NOT_ID.test(key)) continue;
+        errors.push(`${where}: page '${slug}' endpoint '${ep.entity}' puts the identifier '${key}' into ${bag} — a public page never assigns numbers: computed in the browser they collide (one live page wrote the same number for every request of a day), preset they are placeholders, typed by the visitor they are editable. Drop '${key}' from the page; the platform or a tool numbers the record after it exists, and the success page shows the reference the layer generates`);
+      }
+    }
+  }
+  // 3x. The same rule for the OTHER doors a value can take into a record:
+  //     plan `values`, `form.set('key', …)`. A create field the visitor never
+  //     enters and the owner never asked for, filled by the page itself, is a
+  //     value nobody ordered (live: `annahmedatum: todayIso()` in a plan step,
+  //     `gesamtpreis` = nights × price computed in the browser). Picks count
+  //     as visitor input (`onSelect={id => f.set('wohnung', id, …)}`), plan
+  //     `link`s are the layer's job, presets/defaults are judged by 3q.
+  if (ep.op === 'create' && appMeta && pageSrc) {
+    const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    const lc = (x) => String(x ?? '').toLowerCase().trim();
+    const esc = (k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const MONEY = /(preis|betrag|summe|kosten|total|amount|price|gebuehr|gebühr|rabatt|steuer)/i;
+    for (const key of ep.fields || []) {
+      const k = esc(key);
+      const bound = new RegExp(`name=["']${k}["']|\\.(?:field|number|date|choice|checkbox|record|records)\\(\\s*['"]${k}['"]|\\.range\\(\\s*['"]${k}['"]|\\.range\\(\\s*['"]\\w+['"]\\s*,\\s*['"]${k}['"]|onSelect=\\{[^}]*set\\(\\s*['"]${k}['"]|set\\(\\s*['"]${k}['"]\\s*,\\s*(?:id|item|selected|picked|choice|record|\\w*Id)\\b`).test(pageSrc);
+      const linked = new RegExp(`link\\s*:\\s*\\{[^}]*\\b${k}\\s*:`).test(pageSrc);
+      const preset = key in (ep.preset_fields || {}) || key in (ep.default_fields || {});
+      const filledByPage = new RegExp(`\\bvalues\\s*:[^;]*?\\b${k}\\s*:|set\\(\\s*['"]${k}['"]\\s*,`).test(pageSrc);
+      const prefilled = new RegExp(`\\binitial\\s*:\\s*\\{[^}]*\\b${k}\\s*:`).test(pageSrc);
+      const c = controls[key] || {};
+      // A prefilled control is a value nobody ordered with a visitor who did
+      // not object (live: `initial: { status: 'angenommen' }` behind a pill
+      // group the visitor never touches). The owner has to name the field.
+      if (prefilled && pageRequest) {
+        const named = [key, c.label].map(lc).filter(w => w.length >= 3).some(w => pageRequest.includes(w));
+        if (!named) {
+          errors.push(`${pageFile || where}: page '${slug}' prefills '${ep.entity}.${key}' (useStepForm initial) although the owner never asked for '${c.label || key}' — a prefilled value lands in every record whose visitor does not change it. Drop '${key}' from the page; if the record cannot do without it, ask the visitor without a default`);
+          continue;
+        }
+      }
+      if (bound || linked || preset) continue;
+      const computedMoney = MONEY.test(key) && new RegExp(`set\\(\\s*['"]${k}['"]\\s*,\\s*[^)]*[*+]|\\b${k}\\s*:\\s*[^,}]*[*+]|const\\s+${k}\\s*=\\s*[^;]*[*+]`).test(pageSrc);
+      if (computedMoney) {
+        errors.push(`${pageFile || where}: page '${slug}' computes the amount '${key}' in the browser and writes it into '${ep.entity}' — a visitor's browser never sets a price (it can be edited before submit, and it drifts from the owner's rules). Drop '${key}' from the create endpoint; a tool prices the record after it exists, the page may only DISPLAY an estimate`);
+        continue;
+      }
+      if (!filledByPage) continue;
+      if (!pageRequest) continue;
+      const words = [key, c.label].map(lc).filter(w => w.length >= 3);
+      if (words.some(w => pageRequest.includes(w))) continue;
+      errors.push(`${pageFile || where}: page '${slug}' fills '${ep.entity}.${key}' itself (plan values / form.set) although no visitor enters it and the owner never asked for '${c.label || key}' — a value nobody ordered lands in every record. Drop '${key}' from the create endpoint and from the page; if the record cannot do without it, ask the visitor for it`);
+    }
+  }
+  // 3z. Internal state is the operator's, never the visitor's. A visitor who
+  //     picks the order status ("Auftragsstatus: angenommen") or the customer
+  //     type on a public page writes workflow state nobody ordered (live: the
+  //     repair page moved status from a preset into a pill group). Such a
+  //     field stays off the page unless the owner asked for exactly that.
+  if (ep.op === 'create' && appMeta && pageRequest) {
+    const controls = appMeta.apps?.[ep.entity]?.controls || {};
+    const lc = (x) => String(x ?? '').toLowerCase().trim();
+    const STATE = /^(status|zustand|phase|stufe|prioritaet|priorität|bearbeiter|zugewiesen|freigabe|freigegeben|bezahlt|erledigt|abgeschlossen|kategorie|typ|art)$|_status$|_typ$/i;
+    for (const key of ep.fields || []) {
+      if (!STATE.test(key)) continue;
+      const c = controls[key] || {};
+      const named = [key, c.label].map(lc).filter(w => w.length >= 3).some(w => pageRequest.includes(w));
+      if (named) continue;
+      errors.push(`${where}: page '${slug}' lets the visitor set '${ep.entity}.${key}' (${c.label || key}) — internal state belongs to the operator, and the owner never asked for it. Remove '${key}' from the create endpoint and the page; the record gets its state from the operator or a tool afterwards`);
     }
   }
   // A list endpoint without an explicit projection is rejected by the
@@ -369,10 +579,20 @@ function checkEndpoint(slug, ep, pageSrc, pageFile, where = SURFACE) {
         // `continue`, never `return`: a `return` here left checkEndpoint at the
         // first optional field and skipped the stay-resource rule below (live:
         // a booking page without its room passed the gate).
-        if (!controls[key]?.required || key in preset) continue;
-        const referenced = new RegExp(`(['"\`]${key}['"\`])|(\\b${key}\\s*:)`).test(pageSrc);
-        if (!referenced) {
-          errors.push(`${pageFile}: required field '${key}' of '${ep.entity}' is declared in ${where} but the page never submits it — either add an input for it (createPublicRecord must include '${key}') or drop '${key}' out of the endpoint's field projection so the team fills it internally`);
+        if (!controls[key]?.required || key in preset || key in (ep.default_fields || {})) continue;
+        // The key must be PROVIDED for this entity, not merely mentioned: a
+        // live page listed `status` in the create fields, never set it, and
+        // read `r.fields['status']` in another entity's where-filter — the old
+        // "is the word in the source" test passed, every submit got 400
+        // missing_fields: ["status"]. Provided means: in this entity's
+        // useStepForm fields, set on that form, or in a plan step's values.
+        const formBlocks = [...pageSrc.matchAll(new RegExp(`useStepForm\\(\\s*['"]${ep.entity}['"]\\s*,\\s*\\{([\\s\\S]*?)\\}\\s*\\)`, 'g'))].map(m => m[1]);
+        const inFormFields = formBlocks.some(b => new RegExp(`\\bfields\\s*:\\s*\\[[^\\]]*['"]${key}['"]`).test(b));
+        const setOnForm = new RegExp(`\\.set\\(\\s*['"]${key}['"]`).test(pageSrc);
+        const inValues = new RegExp(`\\bvalues\\s*:[\\s\\S]{0,600}?\\b${key}\\s*:`).test(pageSrc);
+        const inCreateCall = new RegExp(`createPublicRecord\\([\\s\\S]{0,400}?\\b${key}\\s*:`).test(pageSrc);
+        if (!inFormFields && !setOnForm && !inValues && !inCreateCall) {
+          errors.push(`${pageFile}: required field '${key}' of '${ep.entity}' is declared in ${where} but the page never provides it (not in useStepForm('${ep.entity}', { fields: [...] }), not set(), not in a plan step's values) — every submit fails with 400 missing_fields. Either bind an input for '${key}' or drop it from the endpoint's fields so the team fills it internally; a fixed value belongs in preset_fields`);
         }
       }
     }
@@ -508,6 +728,28 @@ for (const [slug, page] of surfacePages) {
     ? readFileSync(join(PAGES_DIR, `${page.component}.tsx`), 'utf8')
     : '';
   const readsParam = /useSearchParams|searchParams|URLSearchParams/.test(src);
+  // 3r. A read of a field the list projection does not include is always
+  //     empty for visitors — the grant never delivers it. Live: "Ändern"
+  //     added Beschreibung and Ausstattung to the cards in code only, the
+  //     surface stayed as it was, the page stayed published and showed
+  //     nothing. Only keys that belong to a LISTED entity and to no declared
+  //     endpoint field (create or list) are judged — a form field of another
+  //     entity with the same name is left alone.
+  if (appMeta && src) {
+    const declared = new Set();
+    for (const e of page.endpoints || []) for (const k of (e.fields || [])) declared.add(k);
+    const reads = new Set();
+    for (const m of src.matchAll(/\.fields(?:\.(\w+)|\[['"](\w+)['"]\])/g)) reads.add(m[1] || m[2]);
+    for (const m of src.matchAll(/\bfield(?:Text|Lookup|Lookups|Number|Date|Ref)\(\s*[^,()]+,\s*['"](\w+)['"]/g)) reads.add(m[1]);
+    for (const ep of (page.endpoints || []).filter(e => e.op === 'list')) {
+      const controls = appMeta.apps?.[ep.entity]?.controls || {};
+      const projection = new Set(ep.fields || []);
+      for (const key of reads) {
+        if (projection.has(key) || declared.has(key) || !controls[key]) continue;
+        errors.push(`${SURFACE}: page '${slug}' reads '${key}' of '${ep.entity}' (${page.component}.tsx), but the list projection does not include it — the grant never delivers that field, visitors always see it empty. Add '${key}' to the list endpoint's fields (and mind what that exposes) or remove the read`);
+      }
+    }
+  }
   if (readsParam && !page.link_param) {
     errors.push(`${SURFACE}: page '${slug}' reads a query parameter but declares no "link_param" — without it the owner only gets the bare page URL, which shows "link incomplete". Add link_param: { name, entity, label_field } (entity needs a list endpoint on this page).`);
   }
@@ -519,9 +761,14 @@ for (const [slug, page] of surfacePages) {
     if (readsParam && src && !src.includes(String(lp.name || '\u0000'))) {
       errors.push(`${SURFACE}: page '${slug}' declares link_param '${lp.name}' but ${page.component}.tsx never reads that name — the generated links would carry a parameter the page ignores`);
     }
-    const listed = (page.endpoints || []).some(e => e.op === 'list' && e.entity === lp.entity);
-    if (!listed) {
+    const lpList = (page.endpoints || []).find(e => e.op === 'list' && e.entity === lp.entity);
+    if (!lpList) {
       errors.push(`${SURFACE}: page '${slug}' link_param entity '${lp.entity}' has no list endpoint on this page — the page could not read the linked record`);
+    } else if (!lpList.scope) {
+      // The grant has no per-record path: the page reads the WHOLE list to find
+      // the linked record, so every record is readable for anyone with the bare
+      // URL (live: all order numbers, statuses and plates of a workshop).
+      warnings.push(`${SURFACE}: page '${slug}' link_param entity '${lp.entity}' is listed without a scope — anyone with the page URL can read every '${lp.entity}' record through the grant, not only the linked one. Narrow the list with a scope where the data allows it, and name the exposure in your summary`);
     }
   }
   {

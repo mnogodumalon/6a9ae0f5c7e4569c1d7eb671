@@ -1,7 +1,7 @@
 /**
  * useOccupancy — the taken nights of an entity, read through the page's door.
  *
- *   const belegung = useOccupancy(servicePort, 'buchungen', { resource: f.get('zimmer') as string });
+ *   const belegung = useOccupancy(servicePort, 'buchungen', { resource: f.get('zimmer') as string });   // with a flow hook: flow.port
  *   <AvailabilityRangePicker {...f.range('anreise', 'abreise', { blocked: belegung.blocked })} />
  *   const zimmer = useRecordSearch(servicePort, 'zimmer', { where: belegung.freeIn(anreise, abreise), … });
  *

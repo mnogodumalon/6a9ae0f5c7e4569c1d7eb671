@@ -6,7 +6,8 @@
  * non-zero with actionable messages; fix every ERROR and re-run until green.
  * Text-based on purpose: cheap, deterministic, no AST dependency.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 const FILE = 'src/pages/DashboardOverview.tsx';
 let src;
@@ -515,6 +516,36 @@ if (gridIdx >= 0) {
     errors.push(
       'Module-scope LOOKUP_OPTIONS label read — the labels are locale-aware getters and freeze in whatever language is active at import. Move THIS derivation unchanged into the component body; a plain const or useMemo there is enough. Do NOT split it into a keys-only module const plus a second lookup in the body — a live run took that path, then had to delete the now-unused const again (three edits for a one-edit move).\n' + hoisted.join('\n')
     );
+  }
+}
+
+// ── The form-enhancement engine is generator-owned and must stay intact.
+// Live (22.09.2026): the form-polish sub-agent left `types.ts` as its bare
+// interfaces, all runtime helpers gone; every dialog then failed to compile
+// and the dashboard agent spent half its run hand-writing replacements into
+// a file it does not own. The dialogs' own import line is the contract —
+// whatever they name must be exported there.
+{
+  const TYPES = 'src/config/form-enhancements/types.ts';
+  const DIALOGS = 'src/components/dialogs';
+  if (existsSync(TYPES) && existsSync(DIALOGS)) {
+    const typesSrc = readFileSync(TYPES, 'utf8');
+    const wanted = new Set();
+    for (const f of readdirSync(DIALOGS).filter(n => n.endsWith('.tsx'))) {
+      const src = readFileSync(join(DIALOGS, f), 'utf8');
+      const re = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"]@\/config\/form-enhancements\/types['"]/g;
+      let m;
+      while ((m = re.exec(src))) {
+        for (const raw of m[1].split(',')) {
+          const name = raw.replace(/\btype\b/, '').split(' as ')[0].trim();
+          if (name) wanted.add(name);
+        }
+      }
+    }
+    const missing = [...wanted].filter(n => !new RegExp(`export\\s+(?:type\\s+|interface\\s+|const\\s+|function\\s+)?${n}\\b`).test(typesSrc));
+    if (missing.length) {
+      errors.push(`${TYPES} no longer exports ${missing.join(', ')} — the file is GENERATOR-owned; restore it (run Update) instead of re-implementing it in place. The dialogs import these by name.`);
+    }
   }
 }
 

@@ -6,33 +6,42 @@ import {
 } from '@/components/widgets/RecordView';
 import { t, appLabel, fieldLabel } from '@/i18n';
 import { SatelliteSection } from '@/components/SatelliteSection';
+import { usePermissions } from '@/lib/permissions';
 
 export interface TeamsDetailsProps {
   /** Der Record — enriched oder roh; alle Felder werden hier gerendert. */
   record: Teams;
-  /** N:1-Ziel „Mitarbeitende" + 1:N-Satellite (team): volle Liste. */
+  /** N:1-Ziel „Mitarbeitende": volle Liste (Hook-Array) — der Block löst Name + Schlüsselfelder selbst auf. */
   mitarbeitendeList: Mitarbeitende[];
-  /** Klick auf Mitarbeitende-Relation/Zeile → overlay.push auf dessen Detail. */
+  /** Klick auf die Mitarbeitende-Relation → overlay.push auf dessen Detail. */
   onOpenMitarbeitende?: (record: Mitarbeitende) => void;
+  /** 1:N „Mitarbeitende" (team): VOLLE Liste — der Block filtert auf diesen Record. */
+  mitarbeitendeTeamList: Mitarbeitende[];
+  /** Zeilen-Klick → overlay.push auf das Mitarbeitende-Detail (nie der Edit-Dialog). */
+  onOpenMitarbeitendeTeam: (record: Mitarbeitende) => void;
   /** Kontextuelles „+": öffnet den Mitarbeitende-Dialog mit diesem Record vorgesetzt. */
-  onAddMitarbeitende: () => void;
+  onAddMitarbeitendeTeam?: () => void;
   /** 1:N „Tickets" (team): VOLLE Liste — der Block filtert auf diesen Record. */
   ticketsList: Tickets[];
   /** Zeilen-Klick → overlay.push auf das Tickets-Detail (nie der Edit-Dialog). */
   onOpenTickets: (record: Tickets) => void;
   /** Kontextuelles „+": öffnet den Tickets-Dialog mit diesem Record vorgesetzt. */
-  onAddTickets: () => void;
+  onAddTickets?: () => void;
 }
 
 export function TeamsDetails({
   record,
   mitarbeitendeList,
   onOpenMitarbeitende,
-  onAddMitarbeitende,
+  mitarbeitendeTeamList,
+  onOpenMitarbeitendeTeam,
+  onAddMitarbeitendeTeam,
   ticketsList,
   onOpenTickets,
   onAddTickets,
 }: TeamsDetailsProps) {
+  // attachments are a write to this record — read-only without the platform right
+  const perms = usePermissions();
   const leadTarget = mitarbeitendeList.find(r => r.record_id === extractRecordId(record.fields.lead));
   return (
     <>
@@ -45,18 +54,18 @@ export function TeamsDetails({
       <RecordSection title={t('relations')} cols={1}>
         <RecordRelation
           label={fieldLabel('teams', 'lead')}
-          name={leadTarget ? [leadTarget.fields.first_name, leadTarget.fields.last_name].filter(Boolean).join(' ') : '—'}
+          name={leadTarget?.fields.first_name ?? '—'}
           meta={[leadTarget?.fields.email, leadTarget?.fields.phone].filter(Boolean).join(' · ') || undefined}
           onClick={leadTarget && onOpenMitarbeitende ? () => onOpenMitarbeitende!(leadTarget!) : undefined}
         />
       </RecordSection>
 
       <SatelliteSection
-        title={appLabel('mitarbeitende')}
-        items={mitarbeitendeList.filter(r => extractRecordId(r.fields.team) === record.record_id)}
-        map={r => ({ name: [r.fields.first_name, r.fields.last_name].filter(Boolean).join(' ') || appLabel('mitarbeitende'), meta: undefined })}
-        onOpen={onOpenMitarbeitende ?? (() => {})}
-        onAdd={onAddMitarbeitende}
+        title={`${appLabel('mitarbeitende')} · ${fieldLabel('mitarbeitende', 'team')}`}
+        items={mitarbeitendeTeamList.filter(r => extractRecordId(r.fields.team) === record.record_id)}
+        map={r => ({ name: r.fields.first_name ?? appLabel('mitarbeitende'), meta: undefined })}
+        onOpen={onOpenMitarbeitendeTeam}
+        onAdd={onAddMitarbeitendeTeam}
         getKey={r => r.record_id}
       />
 
@@ -69,7 +78,7 @@ export function TeamsDetails({
         getKey={r => r.record_id}
       />
 
-      <RecordAttachments appId={APP_IDS.TEAMS} recordId={record.record_id} />
+      <RecordAttachments appId={APP_IDS.TEAMS} recordId={record.record_id} readOnly={!perms.canWrite('teams')} />
     </>
   );
 }

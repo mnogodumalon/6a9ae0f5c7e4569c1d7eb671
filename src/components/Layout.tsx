@@ -2,8 +2,10 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useState, useEffect, useRef } from 'react';
 import { IntentsNav } from '@/components/IntentsNav';
+import { ActionsSidebar } from '@/components/ActionsSidebar';
 import { Button } from '@/components/ui/button';
 import { VersionCheck } from '@/components/VersionCheck';
+import { PlanNotice } from '@/components/PlanNotice';
 // Sprachwechsel kommt aus der Plattform-Topnav: sie schreibt <html lang>,
 // src/i18n beobachtet das Attribut und LocaleGate remountet den Baum.
 import { t, appgroupLabel } from '@/i18n';
@@ -142,10 +144,15 @@ export function Layout() {
               actions-agent (row = run, code and description buttons, the last
               row 'Alle Aktionen' opens the full list); la-action-files-widget
               lists files those actions produced and hides itself — section
-              included — while there are none. New actions are created in the
-              assistant's chat. */}
+              included — while there are none. Below the widget one more row,
+              'Werkzeuge' (ActionsSidebar), opens the assistant's drawer
+              (<la-klar-assistant actions-open>) — the only place with run,
+              files, triggers, last run, versions and chat per action; the
+              widget alone had lost that entry point in 0.0.386 (0.0.407).
+              New actions are created in the assistant's chat. */}
           <la-nav-section type="secondary" label={t('actions_section')}>
             <la-actions-widget group-id={APPGROUP_ID} />
+            <ActionsSidebar />
           </la-nav-section>
           <la-nav-section type="secondary" label={t('files_section')}>
             <la-action-files-widget group-id={APPGROUP_ID} />
@@ -195,7 +202,10 @@ export function Layout() {
               }}>{t('auth_login_button')}</Button>
             </div>
           ) : (
-            <Outlet />
+            <>
+              {location.pathname === '/' && <PlanNotice />}
+              <Outlet />
+            </>
           )}
         </main>
       </div>

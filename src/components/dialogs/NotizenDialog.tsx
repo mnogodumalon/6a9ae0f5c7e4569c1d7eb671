@@ -105,6 +105,8 @@ export function NotizenDialog({ open, onClose, onSubmit, defaultValues, recordId
     setCreateTicketsInitial(q);
     setCreateTicketsOpen(true);
   }
+  // Fields the plan assigns to a tool (empty without a plan).
+  const SYSTEM_ASSIGNED: string[] = [];
   const [aiOpen, setAiOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanSuccess, setScanSuccess] = useState(false);
@@ -325,7 +327,7 @@ export function NotizenDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="ticket">{fieldLabel('notizen', 'ticket')}</Label>
         <Combobox
           id="ticket"
-          placeholder="Zu welchem Ticket?"
+          placeholder=""
           items={ticketsListAll.map(r => ({
             id: r.record_id,
             label: String(r.fields.title ?? r.record_id),
@@ -342,7 +344,7 @@ export function NotizenDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="text">{fieldLabel('notizen', 'text')}</Label>
         <Textarea
           id="text"
-          placeholder="Notiz, Update, Zwischenstand..."
+          placeholder=""
           value={fields.text ?? ''}
           onChange={e => setFields(f => ({ ...f, text: e.target.value }))}
           rows={3}
@@ -354,7 +356,7 @@ export function NotizenDialog({ open, onClose, onSubmit, defaultValues, recordId
         <Label htmlFor="author">{fieldLabel('notizen', 'author')}</Label>
         <Input
           id="author"
-          placeholder="z. B. Anna Müller"
+          placeholder=""
           value={fields.author ?? ''}
           onChange={e => setFields(f => ({ ...f, author: e.target.value }))}
         />
@@ -647,9 +649,25 @@ export function NotizenDialog({ open, onClose, onSubmit, defaultValues, recordId
               const renderField = (k: string) => {
                 const inlineHints = computedLayout.anchors[k] ?? [];
                 const refs = applookupRefs[k] ?? [];
+                // A field the plan gives to a TOOL. On CREATE it is not shown
+                // at all — the value does not exist yet and typing one only
+                // gets overwritten. On EDIT it stays a normal input with a
+                // note: when a tool could not compose its value (a missing
+                // ingredient), this is the only place to repair the record.
+                if (SYSTEM_ASSIGNED.includes(k) && !recordId) {
+                  return (
+                    <div key={k} className="space-y-1.5 min-w-0">
+                      <Label>{fieldLabel('notizen', k)}</Label>
+                      <p className="text-sm text-muted-foreground">{t('assigned_by_system')}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div key={k} className="space-y-1.5 min-w-0">
                     {fieldBlocks[k]}
+                    {SYSTEM_ASSIGNED.includes(k) && (
+                      <p className="text-xs text-muted-foreground">{t('assigned_by_system')}</p>
+                    )}
                     {refs.map(({ lookupKey }) => {
                       // Show the live numeric value the formula will pull from
                       // the selected lookup target (e.g. "Monatspreis: 34,90 €"

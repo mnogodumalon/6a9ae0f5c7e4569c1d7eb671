@@ -36,3 +36,19 @@ export const OCCUPANCY: Partial<Record<EntityKey, OccupancyRule>> = {
   // <custom:occupancy>
   // </custom:occupancy>
 };
+
+/**
+ * A record of the KEY entity is TAKEN while a record of `entity` points at it
+ * through `field` — a slot with a booking, a seat with a ticket. Generated
+ * from the plan's blocking `unique` check on that reference (05.10.2026:
+ * the salon's public page offered booked slots again). Pickers on both
+ * doors leave taken records out (useRecordSearch); a public page reads only
+ * `field` of `entity` — never who booked. Generator-owned: no markers.
+ */
+export interface TakenRule {
+  entity: EntityKey;
+  field: string;
+}
+
+export const TAKEN_BY: Partial<Record<EntityKey, TakenRule>> = {
+};

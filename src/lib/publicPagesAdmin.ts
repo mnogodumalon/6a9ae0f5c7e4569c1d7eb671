@@ -37,6 +37,8 @@ export interface PublicPageLinkParam {
 }
 
 export interface PublicPageSummary {
+  /** The owner's field policy, empty when untouched. */
+  policy?: PagePolicy;
   slug: string;
   type: PageType;
   origin: PageOrigin;
@@ -97,6 +99,113 @@ async function patchPage(slug: string, body: Record<string, unknown>): Promise<P
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+/** The owner's field policy — see the backend's normalize_policy. */
+export interface FieldPolicyRule {
+  hidden?: boolean;
+  required?: boolean;
+  fixed?: unknown;
+  label?: string;
+}
+
+/** One condition of the owner's list filter: a field, a comparison, a value.
+ *  in/not_in carry a list; empty/not_empty carry none; dates carry a
+ *  YYYY-MM-DD literal or {rel: 'today'|'now', days?}. */
+export type FilterOp = 'eq' | 'ne' | 'in' | 'not_in' | 'gt' | 'gte' | 'lt' | 'lte' | 'empty' | 'not_empty';
+export interface FilterCondition {
+  field: string;
+  op: FilterOp;
+  value?: unknown;
+}
+/** The owner's filter on a public list — conditions joined by "all" (and) or "any" (or).
+ *  Rendered server-side into the grant's vSQL scope (`expression`). */
+export interface ListFilter {
+  mode: 'all' | 'any';
+  conditions: FilterCondition[];
+  expression?: string;
+}
+/** A control the owner may filter on, with the comparisons its type allows. */
+export interface FilterField {
+  key: string;
+  label: string;
+  fulltype: string;
+  kind: 'text' | 'number' | 'bool' | 'date' | 'datetime' | 'lookup';
+  ops: FilterOp[];
+  options?: { key: string; label: string }[];
+}
+
+export interface ListPolicy {
+  hidden: string[];
+  filter?: ListFilter | null;
+  max_records?: number | null;
+  /** 'drop' removes the agent's own simple filter (the table's single filter is then 'none'). */
+  agent_scope?: 'keep' | 'drop' | null;
+}
+
+export interface PagePolicy {
+  fields: Record<string, Record<string, FieldPolicyRule>>;
+  lists: Record<string, ListPolicy>;
+  texts: Record<string, string>;
+}
+
+export interface PolicyRow {
+  key: string;
+  label: string;
+  fulltype: string;
+  declared: boolean;
+  required_platform: boolean;
+  hidden: boolean;
+  required: boolean | null;
+  fixed: unknown;
+  label_override: string | null;
+  pick: boolean;
+  options?: { key: string; label: string }[];
+  /** A reference field: the label of the app whose record list it opens to visitors. */
+  exposes?: string;
+}
+
+export interface PolicyCatalog {
+  policy: PagePolicy;
+  entities: { entity: string; label: string; fields: PolicyRow[] }[];
+  lists: {
+    entity: string; label: string;
+    fields: { key: string; label: string; hidden: boolean }[];
+    /** The agent's own narrowing, in the owner's language (may be empty). */
+    scope_description?: string;
+    /** The agent's narrowing in the table's simple form, when it has one — shown as the editable filter. */
+    agent_filter?: ListFilter | null;
+    agent_scope?: 'keep' | 'drop';
+    /** The list size the page declared (the owner may lower it). */
+    max_records?: number;
+    /** Controls the owner may filter on, with options for lookups. */
+    filter_fields?: FilterField[];
+  }[];
+  texts: Record<string, string>;
+  page?: PublicPageSummary;
+}
+
+export async function getPolicy(slug: string): Promise<PolicyCatalog> {
+  const res = await fetch(
+    `${BASE}/${encodeURIComponent(APPGROUP_ID)}/${encodeURIComponent(slug)}/policy`,
+    { credentials: 'include', headers: { Accept: 'application/json' } },
+  );
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function updatePolicy(slug: string, policy: PagePolicy): Promise<PolicyCatalog> {
+  const res = await fetch(
+    `${BASE}/${encodeURIComponent(APPGROUP_ID)}/${encodeURIComponent(slug)}/policy`,
+    {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(policy),
+    },
+  );
   if (!res.ok) throw new Error(await readError(res));
   return res.json();
 }

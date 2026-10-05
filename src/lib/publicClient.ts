@@ -14,6 +14,8 @@
 //      file stays language-free.
 
 import { Sentry } from '@/lib/sentry';
+import { LOOKUP_OPTIONS } from '@/types/app';
+import { setFieldPolicy, type FieldPolicy } from '@/lib/journey/policy';
 
 // ---------------------------------------------------------------------------
 // Runtime config (public-pages.json)
@@ -67,6 +69,12 @@ export interface PublicPageConfig {
   fields: PublicFieldConfig[];
   /** Custom pages: which app_id serves which op (list/create). */
   endpoints?: PublicEndpointConfig[];
+  /** Form pages: values the grant sets server-side (the owner's fixed values). */
+  preset_fields?: Record<string, unknown>;
+  /** The owner's field policy ("Felder anpassen"): hidden / required / label
+   *  per entity and field. Registered with the journey layer on load — the
+   *  page code never has to know it. */
+  policy?: { fields?: FieldPolicy } | null;
   /** Declared when the page is reached with `?<name>=<record_id>`. The page
    *  itself reads the value from the URL; this exists so the OWNER-facing
    *  management UI can offer one link per record instead of the bare page
@@ -176,10 +184,14 @@ async function loadArtifactConfig(): Promise<PublicPagesConfig | null> {
 export async function loadPublicPagesConfig(slug?: string): Promise<PublicPagesConfig | null> {
   const artifact = await loadArtifactConfig();
   if (!slug) return artifact;
-  if (artifact && artifact.pages[slug]) return artifact;
+  if (artifact && artifact.pages[slug]) {
+    setFieldPolicy(artifact.pages[slug].policy?.fields);
+    return artifact;
+  }
   const preview = await loadPreviewConfig(slug);
   if (preview) {
     previewActive = true;
+    setFieldPolicy(preview.pages[slug]?.policy?.fields);
     return preview;
   }
   return artifact;
@@ -572,7 +584,7 @@ function normalizeApplookupRefs(
  */
 function dropPresetFields(page: PublicPageConfig, fields: Record<string, unknown>): Record<string, unknown> {
   const ep = page.endpoints?.find(e => e.op === 'create' && e.app_id === page.app_id);
-  const preset = ep?.preset_fields;
+  const preset = ep?.preset_fields ?? page.preset_fields;
   if (!preset) return fields;
   const out = { ...fields };
   for (const key of Object.keys(preset)) delete out[key];
@@ -677,6 +689,29 @@ export async function createPublicRecord(
  * agent-built pages (e.g. free slots on a booking page); read pages
  * typically run with challenge 'none', so no PoW cost per fetch.
  */
+/** Lookup values as `{ key, label }` — the grant delivers bare keys, the
+ *  internal door objects. publicPort hydrated its own reads since 0.0.411, but a
+ *  page calling listPublicRecords directly still saw raw keys (live: department
+ *  cards "fussball / turnen / tennis"). Hydrating here makes every read path
+ *  agree; a value that is already an object stays as it is, so the port's own
+ *  pass is a no-op on top. */
+function hydrateListLookups(page: PublicPageConfig, appId: string, body: Record<string, PublicRecordResult>): Record<string, PublicRecordResult> {
+  const entity = page.endpoints?.find(e => e.app_id === appId)?.entity;
+  const opts = entity ? (LOOKUP_OPTIONS as Record<string, Record<string, Array<{ key: string; label: string }>> | undefined>)[entity] : undefined;
+  if (!opts) return body;
+  const objectFor = (options: Array<{ key: string; label: string }>, v: string) => options.find(o => o.key === v) ?? { key: v, label: v };
+  for (const rec of Object.values(body)) {
+    const fields = rec?.fields as Record<string, unknown> | undefined;
+    if (!fields) continue;
+    for (const [fieldKey, options] of Object.entries(opts)) {
+      const val = fields[fieldKey];
+      if (typeof val === 'string' && val !== '') fields[fieldKey] = objectFor(options, val);
+      else if (Array.isArray(val) && val.some(v => typeof v === 'string')) fields[fieldKey] = val.map(v => (typeof v === 'string' ? objectFor(options, v) : v));
+    }
+  }
+  return body;
+}
+
 export async function listPublicRecords(
   cfg: PublicPagesConfig,
   page: PublicPageConfig,
@@ -696,7 +731,7 @@ export async function listPublicRecords(
     });
     if (!res.ok) throw new PageUnavailableError();
     const body = (await res.json()) as Record<string, PublicRecordResult>;
-    return normalizeListTextareas(body, page, appId);
+    return hydrateListLookups(page, appId, normalizeListTextareas(body, page, appId));
   }
   for (let attempt = 0; ; attempt++) {
     const headers: Record<string, string> = { Accept: 'application/json' };
@@ -711,7 +746,7 @@ export async function listPublicRecords(
     }
     if (res.ok) {
       const body = (await res.json()) as Record<string, PublicRecordResult>;
-      return normalizeListTextareas(body, page, appId);
+      return hydrateListLookups(page, appId, normalizeListTextareas(body, page, appId));
     }
     if (res.status === 403 && attempt === 0 && page.challenge !== 'none') continue;
     await throwSubmitError(res);

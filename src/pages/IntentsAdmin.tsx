@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { IconRoute, IconExternalLink, IconPencil, IconTrash, IconPlus } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { IconRoute, IconExternalLink, IconPencil, IconTrash, IconPlus, IconAdjustments } from '@tabler/icons-react';
 import { PageShell } from '@/components/PageShell';
 import { Button } from '@/components/ui/button';
 import { PageJobDialog, type PageJobTarget } from '@/components/PageJobDialog';
@@ -8,6 +8,7 @@ import { JobStateBadge, JobStateRow } from '@/components/PageJobStatus';
 import { usePageJobs } from '@/hooks/usePageJobs';
 import type { PageJobRecord } from '@/lib/pageJobs';
 import { INTENTS, type IntentLink } from '@/config/intents';
+import { loadIntentPolicies, intentPolicyCount, type IntentPoliciesArtifact } from '@/lib/journey/intentPolicy';
 import { t, locale } from '@/i18n';
 import type { PageOp } from '@/lib/pageJobs';
 
@@ -37,6 +38,10 @@ function slugOf(intent: IntentLink): string {
 
 export default function IntentsAdmin() {
   const [job, setJob] = useState<{ op: PageOp; target?: PageJobTarget; initialPrompt?: string } | null>(null);
+  const navigate = useNavigate();
+  // The owner's field policies (intent-policies.json) — only the badge needs them here.
+  const [policies, setPolicies] = useState<IntentPoliciesArtifact | null>(null);
+  useEffect(() => { void loadIntentPolicies(true).then(setPolicies); }, []);
   const { jobs, refresh } = usePageJobs('flow');
   // A create job has no row of its own yet; edit/delete jobs decorate their page's row.
   const createJobs = jobs.filter(j => !j.target && j.status !== 'done');
@@ -84,6 +89,11 @@ export default function IntentsAdmin() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="truncate font-medium">{title}</span>
+                    {intentPolicyCount(policies, slug) > 0 ? (
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        {t('ppa_policy_changed', { n: intentPolicyCount(policies, slug) })}
+                      </span>
+                    ) : null}
                     {rowJob ? <JobStateBadge job={rowJob} /> : null}
                     {rowJob?.status === 'failed' ? (
                       <button type="button" onClick={() => retry(rowJob)} className="shrink-0 text-xs text-primary underline underline-offset-2">{t('pj_retry')}</button>
@@ -101,6 +111,15 @@ export default function IntentsAdmin() {
                   >
                     <IconExternalLink size={18} stroke={1.5} />
                   </Link>
+                  <button
+                    type="button"
+                    title={t('ppa_policy_title')}
+                    aria-label={t('ppa_policy_title')}
+                    onClick={() => navigate(`/verwaltung/ablaeufe/${encodeURIComponent(slug)}/felder`)}
+                    className={`p-2 rounded-xl transition-colors ${intentPolicyCount(policies, slug) > 0 ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
+                  >
+                    <IconAdjustments size={18} stroke={1.5} />
+                  </button>
                   <button
                     type="button"
                     title={t('ia_edit')}

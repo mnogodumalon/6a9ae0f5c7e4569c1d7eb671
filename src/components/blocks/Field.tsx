@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import { labelOf } from '@/lib/journey/rules';
+import { isHiddenByPolicy } from '@/lib/journey/policy';
+import { usePolicyVersion } from '@/lib/journey/usePolicy';
 import type { StepForm } from '@/lib/journey/useStepForm';
 
 /**
@@ -15,6 +17,11 @@ import type { StepForm } from '@/lib/journey/useStepForm';
  *
  * The error line is the same message `useStepForm` shows on blur; the control's
  * `aria-describedby` (set by the binding) already points at its id.
+ *
+ * <Field name="x"><Bound name="x" /></Field> renders ONE label: Bound reads
+ * the enclosing Field through context and skips its own wrapper (live: a
+ * public form showed every label twice because a gate had asked for the
+ * outer Field and Bound brought its own).
  */
 export interface FieldProps {
   form: StepForm;
@@ -29,10 +36,24 @@ export interface FieldProps {
   className?: string;
 }
 
+/** The field a <Field> is currently rendering — read by <Bound>, which then
+ *  renders only its control instead of a second labelled wrapper. */
+const FieldContext = createContext<string | null>(null);
+
+/** The `name` of the enclosing <Field>, or null outside one. */
+export function useEnclosingField(): string | null {
+  return useContext(FieldContext);
+}
+
 export function Field({ form, name, label, hint, hideLabel = false, children, className = '' }: FieldProps) {
+  usePolicyVersion();
   const id = form.fieldId(name);
   const error = form.error(name);
+  // The owner hid this field (public page policy): no label, no control, no
+  // error — and useStepForm already keeps it out of validation and payload.
+  if (isHiddenByPolicy(form.entity, name)) return null;
   return (
+    <FieldContext.Provider value={name}>
     <div className={`space-y-1.5 ${className}`} data-field={name}>
       <Label htmlFor={id} id={`${id}-label`} className={hideLabel ? 'sr-only' : undefined}>
         {label ?? labelOf(form.entity, name)}
@@ -48,5 +69,6 @@ export function Field({ form, name, label, hint, hideLabel = false, children, cl
         <p id={`${id}-error`} className="text-sm text-destructive" role="alert">{error}</p>
       )}
     </div>
+    </FieldContext.Provider>
   );
 }

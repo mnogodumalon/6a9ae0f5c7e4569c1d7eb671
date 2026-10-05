@@ -6,7 +6,7 @@ const ENVIRONMENT = "dashboard-6a9ae0f5c7e4569c1d7eb671";
  *  the deployment's `version.json`. Exported so `lib/stale-bundle.ts` can tell a
  *  tab that is merely older than the live deployment apart from one whose asset
  *  is genuinely gone. One source for the fact; do not inject it a second time. */
-export const BUNDLE_VERSION = "0.0.403";
+export const BUNDLE_VERSION = "0.0.472";
 const APPGROUP_ID = "6a9ae0f5c7e4569c1d7eb671";
 
 if (DSN) {
@@ -27,7 +27,11 @@ if (DSN) {
     // stream of these until they were filtered.
     // Neither the message nor `startViewTransition` exists in our own code —
     // do not go looking for it there.
-    ignoreErrors: ['Transition was skipped'],
+    // „ResizeObserver loop completed with undelivered notifications“ is a
+    // browser notice about a callback that changed layout again in the same
+    // frame; the observer delivers next frame. ErrorBus filters it for the
+    // toast channel, this is the report channel (issue 30.09.2026, < 800 px).
+    ignoreErrors: ['Transition was skipped', 'ResizeObserver loop'],
   });
   if (APPGROUP_ID) {
     Sentry.setTag('appgroup_id', APPGROUP_ID);

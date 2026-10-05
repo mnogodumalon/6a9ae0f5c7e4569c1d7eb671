@@ -7,6 +7,7 @@ import {
 import { t, appLabel, fieldLabel } from '@/i18n';
 import { MapRouteLinks } from '@/components/widgets/MapWidget';
 import { SatelliteSection } from '@/components/SatelliteSection';
+import { usePermissions } from '@/lib/permissions';
 
 export interface AssetsDetailsProps {
   /** Der Record — enriched oder roh; alle Felder werden hier gerendert. */
@@ -16,7 +17,7 @@ export interface AssetsDetailsProps {
   /** Zeilen-Klick → overlay.push auf das Tickets-Detail (nie der Edit-Dialog). */
   onOpenTickets: (record: Tickets) => void;
   /** Kontextuelles „+": öffnet den Tickets-Dialog mit diesem Record vorgesetzt. */
-  onAddTickets: () => void;
+  onAddTickets?: () => void;
 }
 
 export function AssetsDetails({
@@ -25,6 +26,8 @@ export function AssetsDetails({
   onOpenTickets,
   onAddTickets,
 }: AssetsDetailsProps) {
+  // attachments are a write to this record — read-only without the platform right
+  const perms = usePermissions();
   return (
     <>
       <RecordSection title={t('details')} cols={2}>
@@ -53,7 +56,7 @@ export function AssetsDetails({
         getKey={r => r.record_id}
       />
 
-      <RecordAttachments appId={APP_IDS.ASSETS} recordId={record.record_id} />
+      <RecordAttachments appId={APP_IDS.ASSETS} recordId={record.record_id} readOnly={!perms.canWrite('assets')} />
     </>
   );
 }

@@ -207,18 +207,102 @@ function findComputedBlock(src) {
 function stripUndefinedDefaults(src) {
   const block = findBlock(src, /defaults\s*:\s*\{/);
   if (!block) return { src, removed: 0 };
-  const body = stripComments(src.slice(block.open + 1, block.close));
+  const body = src.slice(block.open + 1, block.close);
   const entries = splitEntries(body);
   const kept = [];
   let removed = 0;
   for (const raw of entries) {
-    const ent = parseEntry(raw);
-    if (ent && (ent.value === 'undefined' || ent.value === 'null')) { removed++; continue; }
-    kept.push('    ' + raw.trim());
+    const ent = parseRawEntry(raw);
+    if (!ent) { kept.push(indentRaw(raw)); continue; }          // a lone comment stays
+    if (ent.value === 'undefined' || ent.value === 'null') { removed++; continue; }
+    kept.push(indentRaw(raw));
   }
   if (removed === 0) return { src, removed: 0 };
   const rendered = kept.length ? '{\n' + kept.join(',\n') + ',\n  }' : '{}';
   return { src: src.slice(0, block.open) + rendered + src.slice(block.close + 1), removed };
+}
+
+// SELF-HEAL 4: a year pinned as a literal. The sub-agent writes
+// `'rechnungsjahr': { kind: 'literal', value: 2026 }` — correct on the day of
+// the build, wrong from 1 January (live 22.09.2026: three runs in a row, on
+// erfassungsjahr, rechnungsjahr, angebotsjahr and projektstart_jahr). The
+// heuristic text asks for `currentYear`; this heals the ones that slip past.
+const PINNED_YEAR = /kind\s*:\s*['"]literal['"][\s\S]*?value\s*:\s*(?:19|20)\d{2}\b/;
+
+function healPinnedYears(src) {
+  const block = findBlock(src, /defaults\s*:\s*\{/);
+  if (!block) return { src, healed: [] };
+  const body = src.slice(block.open + 1, block.close);
+  const healed = [];
+  const kept = splitEntries(body).map(raw => {
+    const ent = parseRawEntry(raw);
+    if (ent && /jahr$|year$/i.test(ent.key) && PINNED_YEAR.test(ent.value)) {
+      healed.push(ent.key);
+      // Swap the value inside the raw entry so a comment next to it survives;
+      // when a comment sits INSIDE the value, rewrite the whole entry.
+      return raw.includes(ent.value)
+        ? indentRaw(raw.replace(ent.value, "{ kind: 'currentYear' }"))
+        : `    '${ent.key}': { kind: 'currentYear' }`;
+    }
+    return indentRaw(raw);
+  });
+  if (!healed.length) return { src, healed };
+  const rendered = '{\n' + kept.join(',\n') + ',\n  }';
+  return { src: src.slice(0, block.open) + rendered + src.slice(block.close + 1), healed };
+}
+
+// SELF-HEAL 5: a default or formula on a field a tool fills WHEN THE RECORD
+// IS CREATED. The sub-agent gets `systemAssigned` in its manifest, but the
+// manifest is deleted after Step 0 — this reads the same list from the
+// generated src/config/plan.ts (SYSTEM_ASSIGNED), which survives, so the
+// repair works even when the sub-agent ignored the instruction (live
+// 22.09.2026: `anlagedatum` prefilled with today next to a tool
+// `kunden_anlagedatum_setzen` for that field). Deliberately NOT the OWNERSHIP
+// map: a scheduled tool that later sets a status owns the field, but on
+// create the status default `entwurf` is right and must stay.
+// Entity keys are normalised (lowercase, no underscores) because the config
+// file is named in PascalCase and the plan speaks identifiers.
+function normEntity(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+async function readToolOwned(planPath) {
+  let src;
+  try { src = await readFile(planPath, 'utf8'); }
+  catch { return new Map(); }
+  // `[^=]*` skips the type annotation; the value ends at the first `};` on a
+  // line of its own (indent=2 output) or is the one-liner `{}`.
+  const m = src.match(/SYSTEM_ASSIGNED[^=]*=\s*(\{\}|\{[\s\S]*?\n\});/);
+  if (!m) return new Map();
+  let parsed;
+  try { parsed = JSON.parse(m[1]); }
+  catch { return new Map(); }
+  const out = new Map();
+  for (const [entity, fields] of Object.entries(parsed)) {
+    if (Array.isArray(fields) && fields.length) out.set(normEntity(entity), new Set(fields));
+  }
+  return out;
+}
+
+function stripToolOwned(src, owned) {
+  if (!owned || !owned.size) return { src, removed: [] };
+  const removed = [];
+  for (const section of ['defaults', 'computed']) {
+    const block = findBlock(src, new RegExp(section + '\\s*:\\s*\\{'));
+    if (!block) continue;
+    const body = src.slice(block.open + 1, block.close);
+    const kept = [];
+    let hit = false;
+    for (const raw of splitEntries(body)) {
+      const ent = parseRawEntry(raw);
+      if (ent && owned.has(ent.key)) { removed.push(`${section}.${ent.key}`); hit = true; continue; }
+      kept.push(indentRaw(raw));
+    }
+    if (!hit) continue;
+    const rendered = kept.length ? '{\n' + kept.join(',\n') + ',\n  }' : '{}';
+    src = src.slice(0, block.open) + rendered + src.slice(block.close + 1);
+  }
+  return { src, removed };
 }
 
 function stripComments(s) {
@@ -265,6 +349,12 @@ function splitEntries(body) {
       continue;
     }
     if (c === '"' || c === "'" || c === '`') { inStr = c; continue; }
+    // Comments are skipped whole, so a `{` inside one does not count. This
+    // lets the healers split the RAW block and hand each entry's comments on
+    // unchanged — the first version re-rendered from a stripped body and a
+    // heal cost every comment in the block.
+    if (c === '/' && body[i + 1] === '/') { while (i < body.length && body[i] !== '\n') i++; continue; }
+    if (c === '/' && body[i + 1] === '*') { i += 2; while (i < body.length - 1 && !(body[i] === '*' && body[i + 1] === '/')) i++; i++; continue; }
     if (c === '{' || c === '(' || c === '[') { depth++; continue; }
     if (c === '}' || c === ')' || c === ']') { depth--; continue; }
     if (c === ',' && depth === 0) {
@@ -276,6 +366,18 @@ function splitEntries(body) {
   const last = body.slice(start).trim();
   if (last) out.push(last);
   return out;
+}
+
+// One raw entry (comments and all) → its parsed key/value, or null. The
+// healers below keep `raw` for rendering and read `ent` for deciding.
+function parseRawEntry(raw) {
+  const clean = stripComments(raw).trim();
+  return clean ? parseEntry(clean) : null;
+}
+
+// Re-indent a raw entry: every line at four spaces, blank lines dropped.
+function indentRaw(raw) {
+  return raw.trim().split('\n').map(l => l.trim()).filter(Boolean).map(l => '    ' + l).join('\n');
 }
 
 function parseEntry(entry) {
@@ -513,6 +615,10 @@ async function main() {
   const targets = files.filter(f => f.endsWith('.ts') && f !== 'types.ts');
   if (targets.length === 0) { console.log('[parse-formulas] no entity configs found'); return; }
 
+  // The plan's create-assigned fields, read once: what a tool fills in when
+  // the record is created, per entity.
+  const toolOwned = await readToolOwned(join('src', 'config', 'plan.ts'));
+
   let totalParsed = 0, totalDropped = 0, totalDeps = 0, totalRefs = 0, touched = 0;
   for (const name of targets) {
     const path = join(TARGET_DIR, name);
@@ -529,8 +635,16 @@ async function main() {
     if (defaultsHeal.removed) {
       console.log(`[parse-formulas] ${name}: removed ${defaultsHeal.removed} undefined default(s) (TS2322 heal — an omitted field needs no entry)`);
     }
-    const healed = ensureExports(defaultsHeal.src);
-    if (healed !== defaultsHeal.src) {
+    const ownedHeal = stripToolOwned(defaultsHeal.src, toolOwned.get(normEntity(name.replace(/\.ts$/, ''))));
+    if (ownedHeal.removed.length) {
+      console.log(`[parse-formulas] ${name}: dropped ${ownedHeal.removed.join(', ')} — a tool of the plan owns these fields`);
+    }
+    const yearHeal = healPinnedYears(ownedHeal.src);
+    if (yearHeal.healed.length) {
+      console.log(`[parse-formulas] ${name}: ${yearHeal.healed.join(', ')} → currentYear (a pinned year is wrong from 1 January)`);
+    }
+    const healed = ensureExports(yearHeal.src);
+    if (healed !== yearHeal.src) {
       console.log(`[parse-formulas] ${name}: appended missing computedDeps/computedApplookupRefs export(s)`);
     }
     if (res.healedParams) {

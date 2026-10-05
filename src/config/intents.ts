@@ -43,9 +43,9 @@ export interface IntentLink {
 
 export const INTENTS: IntentLink[] = [
   // <custom:intents>
-  { path: '/intents/neues-ticket', label: { de: 'Neues Ticket', en: 'New ticket' }, icon: IconTicket, description: 'Neues Support-Ticket in 3 Schritten anlegen' },
-  { path: '/intents/ticket-zuweisen', label: { de: 'Ticket zuweisen', en: 'Assign ticket' }, icon: IconUserCheck, description: 'Ticket einem Agenten und Team zuweisen oder neu zuweisen' },
-  { path: '/intents/notiz-hinzufuegen', label: { de: 'Notiz hinzufügen', en: 'Add note' }, icon: IconNotes, description: 'Interne oder externe Notiz zu einem Ticket hinzufuegen' },
+  { path: '/intents/neues-ticket', label: { de: 'Neues Ticket', en: 'New ticket' }, icon: IconTicket, description: { de: 'Neues Support-Ticket in 3 Schritten anlegen', en: 'Create a new support ticket in 3 steps' } },
+  { path: '/intents/ticket-zuweisen', label: { de: 'Ticket zuweisen', en: 'Assign ticket' }, icon: IconUserCheck, description: { de: 'Ticket einem Agenten und Team zuweisen oder neu zuweisen', en: 'Assign or reassign a ticket to an agent and team' } },
+  { path: '/intents/notiz-hinzufuegen', label: { de: 'Notiz hinzufügen', en: 'Add note' }, icon: IconNotes, description: { de: 'Interne oder externe Notiz zu einem Ticket hinzufuegen', en: 'Add an internal or external note to a ticket' } },
   // </custom:intents>
 ];
 
@@ -65,5 +65,5 @@ export const INTENTS_PENDING = false;
  * pulsing "werden erstellt …" in every deployed Phase-1 bundle forever — no
  * code path redeploys Phase 1 without the flag (live 03.09.2026).
  */
-export const INTENTS_PENDING_SINCE: string | null = '2026-09-07T15:36:20+00:00';
+export const INTENTS_PENDING_SINCE: string | null = null;
 export const PENDING_MAX_MINUTES = 30;

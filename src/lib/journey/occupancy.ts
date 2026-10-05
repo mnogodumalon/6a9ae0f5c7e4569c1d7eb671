@@ -21,10 +21,15 @@
  * availability claim. A flow that filtered by hand and a public form that
  * blocked every record once showed DIFFERENT calendars for the same rooms.
  */
-import { OCCUPANCY, type OccupancyRule } from '@/config/journey';
+import { OCCUPANCY, TAKEN_BY, type OccupancyRule, type TakenRule } from '@/config/journey';
 import type { EntityKey } from './rules';
 
-export type { OccupancyRule };
+export type { OccupancyRule, TakenRule };
+
+/** Who takes a record of this entity (a booking takes a slot), or undefined. */
+export function takenRuleOf(entity: EntityKey | string): TakenRule | undefined {
+  return (TAKEN_BY as Record<string, TakenRule | undefined>)[entity];
+}
 
 export interface OccupancyRange {
   start: string;
@@ -82,4 +87,19 @@ export function occupancyFor(
       end: r.fields[rule.to] ? String(r.fields[rule.to]).slice(0, 10) : null,
     }))
     .filter(b => b.start);
+}
+
+
+/** The ids of the records the taking records point at (REST URL, grant ref or bare id). */
+export function takenIdsFrom(rule: TakenRule, records: { fields: Record<string, unknown> }[]): Set<string> {
+  const out = new Set<string>();
+  const add = (v: unknown): void => {
+    if (Array.isArray(v)) { v.forEach(add); return; }
+    const s = keyOf(v);
+    if (!s) return;
+    const id = s.replace(/\/+$/, '').split('/').pop();
+    if (id) out.add(id);
+  };
+  for (const r of records) add(r.fields[rule.field]);
+  return out;
 }

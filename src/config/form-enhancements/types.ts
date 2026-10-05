@@ -8,6 +8,9 @@ export type DefaultSpec =
   | { kind: 'today'; withTime?: boolean }
   | { kind: 'todayOffset'; days: number; withTime?: boolean }
   | { kind: 'literal'; value: string | number | boolean }
+  /** The calendar year as a number, resolved at mount. A year pinned as a
+   *  literal is right on the day it is written and wrong from 1 January. */
+  | { kind: 'currentYear' }
   /** For lookup/select|radio fields. The shape matches LookupValue. */
   | { kind: 'lookup'; key: string; label: string };
 
@@ -247,6 +250,9 @@ export function resolveDefault(spec: DefaultSpec): unknown {
     d.setDate(d.getDate() + spec.days);
     const ymd = d.toISOString().slice(0, 10);
     return spec.withTime ? `${ymd}T00:00` : ymd;
+  }
+  if (spec.kind === 'currentYear') {
+    return new Date().getFullYear();
   }
   if (spec.kind === 'lookup') {
     return { key: spec.key, label: spec.label };
